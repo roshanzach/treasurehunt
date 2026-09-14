@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { BookOpen, X, Key, MapPin, Copy, Check } from 'lucide-react';
+import { BookOpen, X, Key, MapPin, Copy, Check, Image as ImageIcon } from 'lucide-react';
+import { getMediaUrl, detectMediaType } from '../utils/media';
 
 export interface UnlockedClue {
   step?: number;
   level: number;
   title?: string;
+  questionType?: string;
+  questionContent?: string;
+  questionMediaUrl?: string | null;
   locationHintType: string;
   locationHintContent: string;
   locationHintMediaUrl: string | null;
@@ -123,6 +127,29 @@ export const ClueNotebook: React.FC<ClueNotebookProps> = ({
                   )}
                 </div>
 
+                {/* Question / Puzzle Media Attachment if available */}
+                {clue.questionMediaUrl && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+                      <ImageIcon size={14} />
+                      <span>STATION PUZZLE MEDIA:</span>
+                    </div>
+                    {detectMediaType(clue.questionMediaUrl, clue.questionType) === 'IMAGE' && (
+                      <img
+                        src={getMediaUrl(clue.questionMediaUrl)}
+                        alt="Station Puzzle"
+                        style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }}
+                      />
+                    )}
+                    {detectMediaType(clue.questionMediaUrl, clue.questionType) === 'AUDIO' && (
+                      <audio controls src={getMediaUrl(clue.questionMediaUrl)} style={{ width: '100%', height: '36px' }} />
+                    )}
+                    {detectMediaType(clue.questionMediaUrl, clue.questionType) === 'VIDEO' && (
+                      <video controls src={getMediaUrl(clue.questionMediaUrl)} style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px' }} />
+                    )}
+                  </div>
+                )}
+
                 {/* Location Hint */}
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#34d399', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
@@ -139,21 +166,22 @@ export const ClueNotebook: React.FC<ClueNotebookProps> = ({
                   }}>
                     {clue.locationHintContent}
 
-                    {/* Audio clue player */}
-                    {clue.locationHintType === 'AUDIO' && clue.locationHintMediaUrl && (
+                    {/* Location Hint Media */}
+                    {clue.locationHintMediaUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        <audio controls src={clue.locationHintMediaUrl} style={{ width: '100%', height: '36px' }} />
-                      </div>
-                    )}
-
-                    {/* Image clue preview */}
-                    {clue.locationHintType === 'IMAGE' && clue.locationHintMediaUrl && (
-                      <div style={{ marginTop: '10px' }}>
-                        <img
-                          src={clue.locationHintMediaUrl}
-                          alt="Location Hint"
-                          style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '8px', objectFit: 'contain' }}
-                        />
+                        {detectMediaType(clue.locationHintMediaUrl, clue.locationHintType) === 'IMAGE' && (
+                          <img
+                            src={getMediaUrl(clue.locationHintMediaUrl)}
+                            alt="Location Hint"
+                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'contain' }}
+                          />
+                        )}
+                        {detectMediaType(clue.locationHintMediaUrl, clue.locationHintType) === 'AUDIO' && (
+                          <audio controls src={getMediaUrl(clue.locationHintMediaUrl)} style={{ width: '100%', height: '36px' }} />
+                        )}
+                        {detectMediaType(clue.locationHintMediaUrl, clue.locationHintType) === 'VIDEO' && (
+                          <video controls src={getMediaUrl(clue.locationHintMediaUrl)} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                        )}
                       </div>
                     )}
                   </div>

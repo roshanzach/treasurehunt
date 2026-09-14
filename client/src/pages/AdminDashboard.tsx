@@ -23,6 +23,7 @@ import {
   Lock,
   KeyRound,
 } from 'lucide-react';
+import { getMediaUrl } from '../utils/media';
 
 interface TeamItem {
   id: string;
@@ -984,8 +985,13 @@ export const AdminDashboard: React.FC = () => {
                       <div style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>QUESTION CONTENT:</div>
                       <div style={{ color: 'var(--text-primary)', marginBottom: '10px', lineHeight: 1.4 }}>{q.questionContent}</div>
                       {q.questionMediaUrl && (
-                        <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '8px' }}>
-                          Media Attachment: <a href={q.questionMediaUrl} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>View File</a>
+                        <div style={{ marginBottom: '10px' }}>
+                          <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '4px' }}>
+                            Puzzle Media: <a href={getMediaUrl(q.questionMediaUrl)} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>View Full Media</a>
+                          </div>
+                          {q.questionType === 'IMAGE' && (
+                            <img src={getMediaUrl(q.questionMediaUrl)} alt="Preview" style={{ maxHeight: '80px', borderRadius: '6px', objectFit: 'contain' }} />
+                          )}
                         </div>
                       )}
                       <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>ACCEPTED ANSWER(S):</div>
@@ -996,6 +1002,11 @@ export const AdminDashboard: React.FC = () => {
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: '10px' }}>
                       <div style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>LOCATION HINT (REVEALED ON SOLVE):</div>
                       <div style={{ color: 'var(--text-primary)', marginBottom: '10px', lineHeight: 1.4 }}>{q.locationHintContent}</div>
+                      {q.locationHintMediaUrl && (
+                        <div style={{ fontSize: '11px', color: '#34d399', marginBottom: '8px' }}>
+                          Location Media: <a href={getMediaUrl(q.locationHintMediaUrl)} target="_blank" rel="noreferrer" style={{ color: '#34d399', textDecoration: 'underline' }}>View Location File</a>
+                        </div>
+                      )}
                       
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(245, 158, 11, 0.08)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed rgba(245, 158, 11, 0.4)' }}>
                         <div>
@@ -1522,19 +1533,31 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
-              {/* Media File Upload */}
-              <div style={{ marginBottom: '14px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Question Media File (Optional Image / Audio / Video)
+              {/* Question Media File / URL */}
+              <div style={{ marginBottom: '14px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#38bdf8', fontWeight: 600, marginBottom: '6px' }}>
+                  Question Media Clue (Image / Audio / Video)
                 </label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'QUESTION')}
+                    style={{ fontSize: '12px', color: 'var(--text-secondary)' }}
+                  />
+                </div>
                 <input
-                  type="file"
-                  onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'QUESTION')}
-                  style={{ fontSize: '12px', color: 'var(--text-secondary)' }}
+                  type="text"
+                  placeholder="Or paste Direct Media URL (e.g. https://... or /uploads/...)"
+                  className="input-field"
+                  value={qMediaUrl}
+                  onChange={(e) => setQMediaUrl(e.target.value)}
+                  style={{ fontSize: '12px', padding: '6px 10px' }}
                 />
                 {qMediaUrl && (
-                  <div style={{ fontSize: '12px', color: '#34d399', marginTop: '6px' }}>
-                    Uploaded: {qMediaUrl}
+                  <div style={{ fontSize: '12px', color: '#34d399', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Attached:</span>
+                    <a href={getMediaUrl(qMediaUrl)} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>View File Preview</a>
+                    <button type="button" onClick={() => setQMediaUrl('')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px' }}>Remove</button>
                   </div>
                 )}
               </div>
@@ -1565,6 +1588,51 @@ export const AdminDashboard: React.FC = () => {
                   value={qHintContent}
                   onChange={(e) => setQHintContent(e.target.value)}
                 />
+              </div>
+
+              {/* Location Hint Media File / URL */}
+              <div style={{ marginBottom: '14px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', color: '#34d399', fontWeight: 600 }}>
+                    Location Hint Media (Photo of Next Station / Audio Clue)
+                  </label>
+                  <select
+                    className="input-field"
+                    value={qHintType}
+                    onChange={(e) => setQHintType(e.target.value as any)}
+                    style={{ padding: '2px 8px', fontSize: '11px', width: 'auto' }}
+                  >
+                    <option value="TEXT">Text Only</option>
+                    <option value="IMAGE">Photo / Image</option>
+                    <option value="AUDIO">Audio Clue</option>
+                    <option value="VIDEO">Video</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    onChange={(e) => e.target.files?.[0] && handleMediaUpload(e.target.files[0], 'HINT')}
+                    style={{ fontSize: '12px', color: 'var(--text-secondary)' }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Or paste Direct Media URL (e.g. https://... or /uploads/...)"
+                  className="input-field"
+                  value={qHintMediaUrl}
+                  onChange={(e) => {
+                    setQHintMediaUrl(e.target.value);
+                    if (e.target.value && qHintType === 'TEXT') setQHintType('IMAGE');
+                  }}
+                  style={{ fontSize: '12px', padding: '6px 10px' }}
+                />
+                {qHintMediaUrl && (
+                  <div style={{ fontSize: '12px', color: '#34d399', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Attached:</span>
+                    <a href={getMediaUrl(qHintMediaUrl)} target="_blank" rel="noreferrer" style={{ color: '#34d399' }}>View File Preview</a>
+                    <button type="button" onClick={() => setQHintMediaUrl('')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px' }}>Remove</button>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '20px' }}>

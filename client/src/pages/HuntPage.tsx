@@ -24,12 +24,13 @@ import {
   Navigation,
   BookOpen,
 } from 'lucide-react';
+import { getMediaUrl, detectMediaType } from '../utils/media';
 
 interface QuestionData {
   id: string;
   level: number;
   title: string;
-  questionType: 'TEXT' | 'IMAGE' | 'AUDIO' | 'VIDEO';
+  questionType: string;
   questionContent: string;
   questionMediaUrl?: string | null;
 }
@@ -450,20 +451,21 @@ export const HuntPage: React.FC = () => {
             {/* Media Clue Display */}
             {activeQuestion.questionMediaUrl && (
               <div style={{ marginBottom: '18px', textAlign: 'center' }}>
-                {activeQuestion.questionType === 'IMAGE' && (
+                {detectMediaType(activeQuestion.questionMediaUrl, activeQuestion.questionType) === 'IMAGE' && (
                   <img
-                    src={activeQuestion.questionMediaUrl}
+                    src={getMediaUrl(activeQuestion.questionMediaUrl)}
                     alt="Question Clue"
                     style={{
                       maxWidth: '100%',
-                      maxHeight: '280px',
+                      maxHeight: '300px',
                       borderRadius: '12px',
                       objectFit: 'contain',
                       border: '1px solid var(--border-subtle)',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                     }}
                   />
                 )}
-                {activeQuestion.questionType === 'AUDIO' && (
+                {detectMediaType(activeQuestion.questionMediaUrl, activeQuestion.questionType) === 'AUDIO' && (
                   <div
                     style={{
                       background: 'rgba(0,0,0,0.4)',
@@ -488,17 +490,18 @@ export const HuntPage: React.FC = () => {
                     </div>
                     <audio
                       controls
-                      src={activeQuestion.questionMediaUrl}
+                      src={getMediaUrl(activeQuestion.questionMediaUrl)}
                       style={{ width: '100%' }}
                     />
                   </div>
                 )}
-                {activeQuestion.questionType === 'VIDEO' && (
+                {detectMediaType(activeQuestion.questionMediaUrl, activeQuestion.questionType) === 'VIDEO' && (
                   <video
                     controls
-                    src={activeQuestion.questionMediaUrl}
+                    src={getMediaUrl(activeQuestion.questionMediaUrl)}
                     style={{
                       maxWidth: '100%',
+                      maxHeight: '300px',
                       borderRadius: '12px',
                       border: '1px solid var(--border-subtle)',
                     }}
@@ -645,6 +648,25 @@ export const HuntPage: React.FC = () => {
                     }}
                   >
                     {solvedReward.locationHint.content}
+
+                    {/* Next Station Clue Media */}
+                    {solvedReward.locationHint.mediaUrl && (
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        {detectMediaType(solvedReward.locationHint.mediaUrl, solvedReward.locationHint.type) === 'IMAGE' && (
+                          <img
+                            src={getMediaUrl(solvedReward.locationHint.mediaUrl)}
+                            alt="Next Station Clue"
+                            style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }}
+                          />
+                        )}
+                        {detectMediaType(solvedReward.locationHint.mediaUrl, solvedReward.locationHint.type) === 'AUDIO' && (
+                          <audio controls src={getMediaUrl(solvedReward.locationHint.mediaUrl)} style={{ width: '100%', height: '36px' }} />
+                        )}
+                        {detectMediaType(solvedReward.locationHint.mediaUrl, solvedReward.locationHint.type) === 'VIDEO' && (
+                          <video controls src={getMediaUrl(solvedReward.locationHint.mediaUrl)} style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '8px' }} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -815,11 +837,38 @@ export const HuntPage: React.FC = () => {
                   color: '#f8fafc',
                   lineHeight: 1.6,
                   margin: 0,
+                  marginBottom: activeCheckpoint?.locationHintMediaUrl ? '14px' : 0,
                 }}
               >
                 {activeCheckpoint?.locationHintContent ||
                   'Decipher your active campus riddle to locate the checkpoint QR badge.'}
               </p>
+
+              {/* Active Station Location Riddle Media */}
+              {activeCheckpoint?.locationHintMediaUrl && (
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  {detectMediaType(activeCheckpoint.locationHintMediaUrl, activeCheckpoint.locationHintType) === 'IMAGE' && (
+                    <img
+                      src={getMediaUrl(activeCheckpoint.locationHintMediaUrl)}
+                      alt="Location Clue Photo"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '260px',
+                        borderRadius: '10px',
+                        objectFit: 'contain',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+                      }}
+                    />
+                  )}
+                  {detectMediaType(activeCheckpoint.locationHintMediaUrl, activeCheckpoint.locationHintType) === 'AUDIO' && (
+                    <audio controls src={getMediaUrl(activeCheckpoint.locationHintMediaUrl)} style={{ width: '100%', height: '36px' }} />
+                  )}
+                  {detectMediaType(activeCheckpoint.locationHintMediaUrl, activeCheckpoint.locationHintType) === 'VIDEO' && (
+                    <video controls src={getMediaUrl(activeCheckpoint.locationHintMediaUrl)} style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '10px' }} />
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Access Key Card */}
