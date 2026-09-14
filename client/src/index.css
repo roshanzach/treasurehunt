@@ -284,17 +284,15 @@ h1, h2, h3, .font-serif {
 }
 
 /* ========================================================
-   PRINT & PDF EXPORT OPTIMIZATION
+   PRINT & PDF EXPORT OPTIMIZATION (EXACTLY 2 QR CARDS PER PAGE)
    ======================================================== */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm 8mm 8mm 8mm;
+    margin: 8mm 10mm 8mm 10mm;
   }
 
   *, *:before, *:after {
-    background: transparent !important;
-    color: #000000 !important;
     box-shadow: none !important;
     text-shadow: none !important;
   }
@@ -306,6 +304,8 @@ h1, h2, h3, .font-serif {
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Hide navigation, toolbars, and extraneous elements during printing */
@@ -320,38 +320,46 @@ h1, h2, h3, .font-serif {
     display: none !important;
   }
 
-  /* Grid layout: 2 cards per row on standard page */
+  /* Print container: 1 column layout */
   .print-qr-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* QR badge card: Never split across pages */
+  /* QR badge card: Formatted for 2 cards per A4 page */
   .print-qr-card {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     break-inside: avoid-page !important;
     -webkit-column-break-inside: avoid !important;
-    border: 2px solid #000000 !important;
-    border-radius: 10px !important;
-    padding: 14px 10px !important;
-    margin: 0 0 10px 0 !important;
+    height: 130mm !important;
+    max-height: 130mm !important;
+    box-sizing: border-box !important;
+    border: 3px dashed #1e293b !important;
+    border-radius: 16px !important;
+    padding: 16px 24px !important;
+    margin: 0 0 8mm 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
     text-align: center !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: space-between !important;
+  }
+
+  /* Force clean page break after every 2nd card */
+  .print-qr-card:nth-child(2n) {
+    page-break-after: always !important;
+    break-after: page !important;
+    margin-bottom: 0 !important;
   }
 
   .print-qr-card img {
-    width: 160px !important;
-    height: 160px !important;
+    width: 170px !important;
+    height: 170px !important;
     display: block !important;
     margin: 0 auto !important;
   }

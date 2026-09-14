@@ -1059,7 +1059,7 @@ export const AdminDashboard: React.FC = () => {
                     background: '#ffffff',
                     color: '#000000',
                     borderRadius: '16px',
-                    padding: '24px',
+                    padding: '20px 24px',
                     textAlign: 'center',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                     border: '4px solid #f59e0b',
@@ -1067,49 +1067,53 @@ export const AdminDashboard: React.FC = () => {
                     breakInside: 'avoid',
                   }}
                 >
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    color: '#d97706',
-                    marginBottom: '4px'
-                  }}>
-                    CAMPUS TREASURE HUNT CHECKPOINT
-                  </div>
-
-                  <h3 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px', color: '#0f172a' }}>
-                    STATION {qr.level}: {qr.locationName || qr.title}
-                  </h3>
-
-                  {qr.locationName && (
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7', marginBottom: '10px' }}>
-                      📍 {qr.title}
+                  <div>
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      color: '#d97706',
+                      marginBottom: '4px'
+                    }}>
+                      CAMPUS TREASURE HUNT CHECKPOINT
                     </div>
-                  )}
+
+                    <h3 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '2px', color: '#0f172a' }}>
+                      STATION {qr.level}: {qr.locationName || qr.title}
+                    </h3>
+
+                    {qr.locationName && (
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7' }}>
+                        📍 {qr.title}
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{
                     display: 'inline-block',
                     padding: '8px',
                     background: '#000000',
                     borderRadius: '12px',
-                    marginBottom: '12px'
+                    margin: '8px auto',
                   }}>
                     <img
                       src={qr.qrDataUrl}
                       alt={`QR Level ${qr.level}`}
-                      style={{ width: '200px', height: '200px', display: 'block', borderRadius: '8px' }}
+                      style={{ width: '180px', height: '180px', display: 'block', borderRadius: '8px' }}
                     />
                   </div>
 
-                  {qr.accessKey && (
-                    <div style={{ fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
-                      Organizer Key Reference: <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{qr.accessKey}</strong>
-                    </div>
-                  )}
+                  <div>
+                    {qr.accessKey && (
+                      <div style={{ fontSize: '13px', color: '#334155', marginBottom: '4px' }}>
+                        Organizer Access Key: <strong style={{ fontFamily: 'monospace', fontSize: '14px', color: '#0f172a', letterSpacing: '0.08em' }}>{qr.accessKey}</strong>
+                      </div>
+                    )}
 
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>
-                    Scan with the in-app camera scanner to reveal the puzzle
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>
+                      Scan with in-app scanner to unlock this station's puzzle
+                    </div>
                   </div>
                 </div>
               ))}
