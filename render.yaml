@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: treasurehunt-backend
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_DEFAULT_USERNAME
+        value: admin
+      - key: ADMIN_DEFAULT_PASSWORD
+        sync: false
+      - key: CLIENT_ORIGIN
+        value: "*"
