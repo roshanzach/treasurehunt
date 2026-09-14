@@ -2,15 +2,15 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://treasure-hunt-backend.onrender.com/api/:match*"
+      "destination": "https://treasurehunt-95y2.onrender.com/api/:match*"
     },
     {
       "source": "/uploads/:match*",
-      "destination": "https://treasure-hunt-backend.onrender.com/uploads/:match*"
+      "destination": "https://treasurehunt-95y2.onrender.com/uploads/:match*"
     },
     {
       "source": "/socket.io/:match*",
-      "destination": "https://treasure-hunt-backend.onrender.com/socket.io/:match*"
+      "destination": "https://treasurehunt-95y2.onrender.com/socket.io/:match*"
     },
     {
       "source": "/(.*)",
