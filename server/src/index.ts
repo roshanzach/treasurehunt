@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { config } from './config';
+import { prisma } from './prisma';
 import { initSocketIO } from './sockets/huntSocket';
 import {
   authenticateToken,
