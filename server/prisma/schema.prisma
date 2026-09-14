@@ -1,0 +1,126 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("ADMIN") // ADMIN
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Team {
+  id             String          @id @default(uuid())
+  teamName       String          @unique
+  teamCode       String          @unique
+  passwordHash   String
+  startLevel     Int             @default(1) // Checkpoint level (1-10) where this team starts
+  currentLevel   Int             @default(1) // Step in their 10-level sequence (1 to 10)
+  isCompleted    Boolean         @default(false)
+  completedAt    DateTime?
+  isSuspended    Boolean         @default(false)
+  status         String          @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, PLAYING, COMPLETED, SUSPENDED
+  totalAttempts  Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deviceSessions DeviceSession[]
+  submissions    Submission[]
+  securityLogs   SecurityLog[]
+  unlockedKeys   UnlockedKey[]
+}
+
+model DeviceSession {
+  id         String    @id @default(uuid())
+  teamId     String
+  team       Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  deviceId   String
+  deviceInfo String? // User Agent / OS / Browser summary
+  ipAddress  String?
+  token      String    @unique
+  isApproved Boolean   @default(false)
+  approvedAt DateTime?
+  lastActive DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([teamId])
+  @@index([deviceId])
+}
+
+model Question {
+  id                   String        @id @default(uuid())
+  level                Int           @unique
+  locationName         String?       // Human readable location name (e.g. Lotus Pond)
+  title                String
+  questionType         String        @default("TEXT") // TEXT, IMAGE, AUDIO, VIDEO
+  questionContent      String
+  questionMediaUrl     String?
+  correctAnswer        String
+  locationHintType     String        @default("TEXT") // TEXT, IMAGE, AUDIO
+  locationHintContent  String
+  locationHintMediaUrl String?
+  accessKey            String        @unique // 6-character alphanumeric key (Level 1 has a placeholder key or is open)
+  qrIdentifier         String        @unique // Unique slug / UUID encoded in QR URL
+  isActive             Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  submissions          Submission[]
+  unlockedKeys         UnlockedKey[]
+}
+
+model UnlockedKey {
+  id         String   @id @default(uuid())
+  teamId     String
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  unlockedAt DateTime @default(now())
+
+  @@unique([teamId, questionId])
+}
+
+model Submission {
+  id              String   @id @default(uuid())
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  submittedAnswer String
+  isCorrect       Boolean
+  attemptNumber   Int      @default(1)
+  createdAt       DateTime @default(now())
+
+  @@index([teamId])
+  @@index([questionId])
+}
+
+model SecurityLog {
+  id             String   @id @default(uuid())
+  teamId         String
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  eventType      String // TAB_SWITCH, WINDOW_BLUR, FULLSCREEN_EXIT, DEVTOOLS, CONCURRENT_DEVICE, SUSPICIOUS_INPUT
+  severity       String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  details        String?
+  violationCount Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  @@index([teamId])
+}
+
+model GameSettings {
+  id                String   @id @default("default")
+  huntTitle         String   @default("Grand Treasure Hunt")
+  huntDescription   String   @default("Scan QR codes, decipher clues, and uncover secrets across locations!")
+  isHuntActive      Boolean  @default(true)
+  requireFullscreen Boolean  @default(false)
+  allowAudioSFX     Boolean  @default(true)
+  autoApproveDevice Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+}
