@@ -609,7 +609,7 @@ export const AdminDashboard: React.FC = () => {
       <main className="container-max" style={{ marginTop: '24px' }}>
         
         {/* Top Control Header */}
-        <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+        <div className="glass-panel no-print" style={{ padding: '24px', marginBottom: '24px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <h1 style={{ fontSize: '24px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1034,7 +1034,7 @@ export const AdminDashboard: React.FC = () => {
         {/* TAB 3: PRINTABLE QR CODE CARDS */}
         {activeTab === 'QR_CARDS' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', color: '#fbbf24' }}>Printable Checkpoint QR Badges</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Print these cards and place them at their corresponding physical locations.</p>
@@ -1046,14 +1046,15 @@ export const AdminDashboard: React.FC = () => {
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
                 <Printer size={16} />
-                <span>Print All Badges</span>
+                <span>Download PDF / Print All Badges</span>
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+            <div className="print-qr-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               {qrCodeDataList.map((qr) => (
                 <div
                   key={qr.qrIdentifier}
+                  className="print-qr-card"
                   style={{
                     background: '#ffffff',
                     color: '#000000',
@@ -1062,6 +1063,8 @@ export const AdminDashboard: React.FC = () => {
                     textAlign: 'center',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                     border: '4px solid #f59e0b',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
                   }}
                 >
                   <div style={{
@@ -1075,12 +1078,12 @@ export const AdminDashboard: React.FC = () => {
                     CAMPUS TREASURE HUNT CHECKPOINT
                   </div>
 
-                  <h3 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '4px', color: '#0f172a' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '4px', color: '#0f172a' }}>
                     STATION {qr.level}: {qr.locationName || qr.title}
                   </h3>
 
                   {qr.locationName && (
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#0284c7', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0284c7', marginBottom: '10px' }}>
                       📍 {qr.title}
                     </div>
                   )}
@@ -1095,12 +1098,8 @@ export const AdminDashboard: React.FC = () => {
                     <img
                       src={qr.qrDataUrl}
                       alt={`QR Level ${qr.level}`}
-                      style={{ width: '220px', height: '220px', display: 'block', borderRadius: '8px' }}
+                      style={{ width: '200px', height: '200px', display: 'block', borderRadius: '8px' }}
                     />
-                  </div>
-
-                  <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                    CHECKPOINT ID: {qr.qrIdentifier}
                   </div>
 
                   {qr.accessKey && (

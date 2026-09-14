@@ -282,3 +282,77 @@ h1, h2, h3, .font-serif {
 .animate-shake {
   animation: shake 0.4s ease-in-out;
 }
+
+/* ========================================================
+   PRINT & PDF EXPORT OPTIMIZATION
+   ======================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  *, *:before, *:after {
+    background: transparent !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide navigation, toolbars, and extraneous elements during printing */
+  .no-print,
+  header,
+  nav,
+  button,
+  .btn-gold,
+  .btn-secondary,
+  .btn-emerald,
+  .btn-danger {
+    display: none !important;
+  }
+
+  /* Grid layout: 2 cards per row on standard page */
+  .print-qr-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* QR badge card: Never split across pages */
+  .print-qr-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+    -webkit-column-break-inside: avoid !important;
+    border: 2px solid #000000 !important;
+    border-radius: 10px !important;
+    padding: 14px 10px !important;
+    margin: 0 0 10px 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .print-qr-card img {
+    width: 160px !important;
+    height: 160px !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+}
