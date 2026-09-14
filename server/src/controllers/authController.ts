@@ -43,9 +43,12 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
         role: user.role,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Admin login error:', error);
-    res.status(500).json({ error: 'Internal server error during login' });
+    res.status(500).json({
+      error: 'Internal server error during login',
+      details: error.message || 'Database connection error',
+    });
   }
 }
 

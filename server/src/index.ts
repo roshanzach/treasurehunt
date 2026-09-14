@@ -43,6 +43,27 @@ app.use('/uploads', express.static(config.uploadDir));
 
 // ================= API ROUTES =================
 
+app.get('/api/health', async (req, res) => {
+  const hasDbUrl = !!process.env.DATABASE_URL;
+  try {
+    const questionCount = await prisma.question.count();
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      checkpoints: questionCount,
+      hasDbUrl,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      status: 'error',
+      database: 'disconnected',
+      hasDbUrl,
+      errorMessage: err.message || 'Unknown database error',
+    });
+  }
+});
+
 // 1. Auth Routes
 app.post('/api/auth/admin-login', authCtrl.adminLogin);
 app.post('/api/auth/team-login', authCtrl.teamLogin);
