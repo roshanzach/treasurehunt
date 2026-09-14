@@ -17,8 +17,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [adminWarningMessage, setAdminWarningMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+    // Initialize socket connection (direct backend URL when in production to support persistent websockets)
+    const socketUrl =
+      import.meta.env.VITE_SOCKET_URL ||
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5050'
+        : 'https://treasurehunt-95y2.onrender.com');
+
     const newSocket = io(socketUrl, {
       auth: { token },
       autoConnect: true,
