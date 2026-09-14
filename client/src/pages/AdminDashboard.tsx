@@ -601,6 +601,182 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Dedicated 2-per-page PDF Print Handler
+  const handlePrintQRCards = () => {
+    if (!qrCodeDataList || qrCodeDataList.length === 0) {
+      alert('QR codes are still generating. Please wait a moment and try again.');
+      return;
+    }
+
+    // Group into strict pairs of 2 cards per page
+    const pages: any[][] = [];
+    for (let i = 0; i < qrCodeDataList.length; i += 2) {
+      pages.push(qrCodeDataList.slice(i, i + 2));
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Treasure Hunt Checkpoint QR Badges</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      background: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .print-page {
+      width: 210mm;
+      height: 296mm;
+      padding: 8mm 14mm;
+      page-break-after: always;
+      break-after: page;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+    }
+    .print-page:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    .badge-card {
+      width: 100%;
+      height: 134mm;
+      border: 3px dashed #1e293b;
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      background: #ffffff;
+    }
+    .badge-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: #b45309;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .badge-title {
+      font-size: 21px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .badge-subtitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0284c7;
+      margin-top: 2px;
+    }
+    .qr-wrapper {
+      background: #000000;
+      padding: 8px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 4px 0;
+    }
+    .qr-img {
+      width: 175px;
+      height: 175px;
+      display: block;
+      border-radius: 6px;
+    }
+    .badge-key {
+      font-size: 13px;
+      color: #334155;
+      margin-bottom: 3px;
+    }
+    .badge-key strong {
+      font-family: monospace;
+      font-size: 15px;
+      color: #0f172a;
+      letter-spacing: 0.08em;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+    }
+    .badge-instruction {
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  ${pages
+    .map(
+      (pair) => `
+    <div class="print-page">
+      ${pair
+        .map(
+          (qr) => `
+        <div class="badge-card">
+          <div>
+            <div class="badge-tag">Campus Treasure Hunt Checkpoint</div>
+            <div class="badge-title">STATION ${qr.level}: ${qr.locationName || qr.title}</div>
+            ${qr.locationName ? `<div class="badge-subtitle">📍 ${qr.title}</div>` : ''}
+          </div>
+
+          <div class="qr-wrapper">
+            <img class="qr-img" src="${qr.qrDataUrl}" alt="Station ${qr.level}" />
+          </div>
+
+          <div>
+            ${
+              qr.accessKey
+                ? `<div class="badge-key">Organizer Access Key: <strong>${qr.accessKey}</strong></div>`
+                : ''
+            }
+            <div class="badge-instruction">Scan with in-app camera scanner to reveal this station's puzzle</div>
+          </div>
+        </div>
+      `
+        )
+        .join('')}
+    </div>
+  `
+    )
+    .join('')}
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 350);
+    };
+  </script>
+</body>
+</html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
       
@@ -1041,12 +1217,12 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <button
-                onClick={() => window.print()}
+                onClick={handlePrintQRCards}
                 className="btn-gold"
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
                 <Printer size={16} />
-                <span>Download PDF / Print All Badges</span>
+                <span>Download PDF / Print Badges (2 Per Page)</span>
               </button>
             </div>
 
