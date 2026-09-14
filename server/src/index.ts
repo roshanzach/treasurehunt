@@ -115,7 +115,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start Server
-server.listen(config.port, () => {
+server.listen(config.port, async () => {
   console.log(`🧭 Treasure Hunt Server running on http://localhost:${config.port}`);
   console.log(`📁 Upload directory: ${config.uploadDir}`);
+
+  // Test database connection
+  try {
+    const questionCount = await prisma.question.count();
+    console.log(`✅ Database connected successfully! Found ${questionCount} checkpoints.`);
+  } catch (dbErr: any) {
+    console.error('❌ Database connection error on startup:', dbErr.message);
+    if (!process.env.DATABASE_URL) {
+      console.error('⚠️ DATABASE_URL environment variable is MISSING on Render!');
+    }
+  }
 });
