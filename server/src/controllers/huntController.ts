@@ -101,15 +101,29 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const normalizedQR = String(qrIdentifier).trim().toUpperCase();
+    let cleanQR = String(qrIdentifier || '').trim();
+    if (cleanQR.startsWith('http://') || cleanQR.startsWith('https://') || cleanQR.includes('?') || cleanQR.includes('/')) {
+      try {
+        const parsed = new URL(cleanQR.startsWith('http') ? cleanQR : `http://dummy.com/${cleanQR}`);
+        cleanQR = parsed.searchParams.get('qr') || parsed.searchParams.get('code') || cleanQR;
+      } catch (e) {
+        const match = cleanQR.match(/[?&](qr|code)=([^&#]+)/i);
+        if (match && match[2]) {
+          cleanQR = decodeURIComponent(match[2]);
+        }
+      }
+    }
+    const normalizedQR = cleanQR.trim().toUpperCase();
 
     // Intercept Decoy / Fake Trap QR
-    if (
+    const isDecoy =
       normalizedQR.includes('DECOY') ||
       normalizedQR.includes('FAKE') ||
       normalizedQR.includes('TRAP') ||
-      normalizedQR.includes('CGPA')
-    ) {
+      normalizedQR.includes('CGPA') ||
+      DECOY_CHECKPOINTS.some((d) => d.code.toUpperCase() === normalizedQR || normalizedQR.includes(d.code.toUpperCase()));
+
+    if (isDecoy) {
       // Log troll telemetry
       try {
         await prisma.securityLog.create({
@@ -117,14 +131,16 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
             teamId,
             eventType: 'FAKE_QR_SCANNED',
             severity: 'LOW',
-            details: `Team scanned decoy checkpoint trap: "${qrIdentifier}"`,
+            details: `Team scanned decoy checkpoint trap: "${cleanQR}"`,
           },
         });
       } catch (logErr) {
         console.warn('Failed to log fake QR scan:', logErr);
       }
 
-      const matchingDecoy = DECOY_CHECKPOINTS.find((d) => d.code.toUpperCase() === normalizedQR);
+      const matchingDecoy = DECOY_CHECKPOINTS.find(
+        (d) => d.code.toUpperCase() === normalizedQR || normalizedQR.includes(d.code.toUpperCase())
+      );
       const quote = matchingDecoy?.trollQuote ||
         (normalizedQR.includes('CGPA') ? CGPA_TROLL_QUOTE : MALAYALAM_TROLL_QUOTE);
 

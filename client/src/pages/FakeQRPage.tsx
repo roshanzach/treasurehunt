@@ -16,16 +16,23 @@ export const FakeQRPage: React.FC = () => {
   const codeParam = (searchParams.get('code') || '').toUpperCase();
   const quoteParam = searchParams.get('quote') || '';
 
-  let activeQuote = MALAYALAM_TROLL_QUOTE;
-  if (quoteParam) {
-    activeQuote = quoteParam;
-  } else if (codeParam.includes('CGPA')) {
-    activeQuote = CGPA_TROLL_QUOTE;
-  }
+  const [activeQuote, setActiveQuote] = React.useState(
+    codeParam.includes('CGPA') ? CGPA_TROLL_QUOTE : (quoteParam || MALAYALAM_TROLL_QUOTE)
+  );
 
   useEffect(() => {
     sound.playError();
-  }, []);
+    if (codeParam) {
+      fetch(`/api/fake-qr-info?code=${encodeURIComponent(codeParam)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.trollQuote) {
+            setActiveQuote(data.trollQuote);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [codeParam]);
 
   return (
     <div style={{

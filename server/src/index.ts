@@ -99,6 +99,7 @@ app.put('/api/admin/questions/:id', authenticateToken, requireAdmin, questionCtr
 app.delete('/api/admin/questions/:id', authenticateToken, requireAdmin, questionCtrl.deleteQuestion);
 app.post('/api/admin/questions/:id/regenerate-key', authenticateToken, requireAdmin, questionCtrl.regenerateAccessKey);
 app.get('/api/admin/questions/:id/qr-code', authenticateToken, requireAdmin, questionCtrl.getQuestionQRCode);
+app.get('/api/fake-qr-info', questionCtrl.getFakeQRInfo);
 app.get('/api/admin/fake-qr-codes', authenticateToken, requireAdmin, questionCtrl.getFakeQRCodes);
 app.post('/api/admin/fake-qr-codes', authenticateToken, requireAdmin, questionCtrl.createFakeQRCode);
 app.delete('/api/admin/fake-qr-codes/:id', authenticateToken, requireAdmin, questionCtrl.deleteFakeQRCode);

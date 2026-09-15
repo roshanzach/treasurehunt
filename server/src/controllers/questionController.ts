@@ -370,15 +370,25 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
 
 export async function getFakeQRCodes(req: Request, res: Response): Promise<void> {
   try {
-    const host = req.get('host') || 'localhost:5000';
-    const protocol = req.protocol === 'https' ? 'https' : 'http';
+    const origin = req.get('origin') || req.get('referer');
+    let host = req.get('host') || 'localhost:5000';
+    let protocol = req.protocol === 'https' ? 'https' : 'http';
+
+    if (origin) {
+      try {
+        const u = new URL(origin);
+        host = u.host;
+        protocol = u.protocol.replace(':', '');
+      } catch {}
+    }
 
     const fakeQRCodes = await Promise.all(
       DECOY_CHECKPOINTS.map(async (decoy, index) => {
         const quoteToUse = decoy.trollQuote || MALAYALAM_TROLL_QUOTE;
-        const clientUrl = `${protocol}://${host}/fake-qr?code=${decoy.code}&quote=${encodeURIComponent(quoteToUse)}`;
+        // Keep URL short and clean so the QR code is low-density and instantly readable
+        const clientUrl = `${protocol}://${host}/fake-qr?code=${decoy.code}`;
         const qrDataUrl = await QRCode.toDataURL(clientUrl, {
-          errorCorrectionLevel: 'H',
+          errorCorrectionLevel: 'M',
           margin: 2,
           width: 400,
           color: {
@@ -425,8 +435,17 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const host = req.get('host') || 'localhost:5000';
-    const protocol = req.protocol === 'https' ? 'https' : 'http';
+    const origin = req.get('origin') || req.get('referer');
+    let host = req.get('host') || 'localhost:5000';
+    let protocol = req.protocol === 'https' ? 'https' : 'http';
+
+    if (origin) {
+      try {
+        const u = new URL(origin);
+        host = u.host;
+        protocol = u.protocol.replace(':', '');
+      } catch {}
+    }
 
     const customId = `decoy-custom-${Date.now()}`;
     let cleanCode = code ? String(code).trim().toUpperCase() : '';
@@ -460,9 +479,9 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
 
     DECOY_CHECKPOINTS.push(newDecoy);
 
-    const clientUrl = `${protocol}://${host}/fake-qr?code=${newDecoy.code}&quote=${encodeURIComponent(quoteToUse)}`;
+    const clientUrl = `${protocol}://${host}/fake-qr?code=${newDecoy.code}`;
     const qrDataUrl = await QRCode.toDataURL(clientUrl, {
-      errorCorrectionLevel: 'H',
+      errorCorrectionLevel: 'M',
       margin: 2,
       width: 400,
       color: {
@@ -489,6 +508,27 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
   }
 }
 
+export async function getFakeQRInfo(req: Request, res: Response): Promise<void> {
+  try {
+    const code = String(req.query.code || '').trim().toUpperCase();
+    const decoy = DECOY_CHECKPOINTS.find((d) => d.code.toUpperCase() === code);
+    if (decoy) {
+      res.json({
+        code: decoy.code,
+        title: decoy.title,
+        locationName: decoy.locationName,
+        trollQuote: decoy.trollQuote || (code.includes('CGPA') ? CGPA_TROLL_QUOTE : MALAYALAM_TROLL_QUOTE),
+      });
+      return;
+    }
+    res.json({
+      code,
+      trollQuote: code.includes('CGPA') ? CGPA_TROLL_QUOTE : MALAYALAM_TROLL_QUOTE,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch fake QR info' });
+  }
+}
 
 export async function deleteFakeQRCode(req: Request, res: Response): Promise<void> {
   try {
@@ -505,4 +545,5 @@ export async function deleteFakeQRCode(req: Request, res: Response): Promise<voi
     res.status(500).json({ error: 'Failed to delete fake QR code' });
   }
 }
+
 

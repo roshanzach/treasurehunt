@@ -21,11 +21,15 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const readerElementId = 'qr-reader-video-box';
 
   const extractQRIdentifier = (text: string): string => {
-    // If it's a full URL like https://domain.com/hunt?qr=QR-L1-GATEWAY-A1
     try {
-      if (text.includes('qr=')) {
-        const url = new URL(text);
-        const qr = url.searchParams.get('qr');
+      const trimmed = text.trim();
+      const match = trimmed.match(/[?&](qr|code)=([^&#]+)/i);
+      if (match && match[2]) {
+        return decodeURIComponent(match[2]);
+      }
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        const url = new URL(trimmed);
+        const qr = url.searchParams.get('qr') || url.searchParams.get('code');
         if (qr) return qr;
       }
     } catch {
@@ -51,8 +55,15 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
       await scannerRef.current.start(
         { facingMode: 'environment' },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+          fps: 15,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdge * 0.75);
+            return {
+              width: Math.max(200, qrboxSize),
+              height: Math.max(200, qrboxSize),
+            };
+          },
         },
         (decodedText) => {
           handleSuccess(decodedText);
