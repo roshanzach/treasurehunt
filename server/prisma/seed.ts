@@ -226,28 +226,28 @@ async function main() {
   }
   console.log(`🗺️  Seeded ${checkpoints.length} campus checkpoint locations with cryptic clues.`);
 
-  // 5. Seed 16 Participant Teams with 16 Distinct Non-Linear Campus Routes
+  // 5. Seed Participant Teams with Unique Non-Linear Campus Routes
   await prisma.team.deleteMany();
 
   const defaultPassword = await bcrypt.hash('team123', 10);
 
   const teamDefinitions = [
-    { name: 'Team Alpha Pioneers', code: 'ALPHA', routeIndex: 1 },
-    { name: 'Team Bravo Navigators', code: 'BRAVO', routeIndex: 2 },
-    { name: 'Team Charlie Crusaders', code: 'CHARLIE', routeIndex: 3 },
-    { name: 'Team Delta Voyagers', code: 'DELTA', routeIndex: 4 },
-    { name: 'Team Echo Enigmas', code: 'ECHO', routeIndex: 5 },
-    { name: 'Team Foxtrot Pathfinders', code: 'FOXTROT', routeIndex: 6 },
-    { name: 'Team Golf Galleons', code: 'GOLF', routeIndex: 7 },
-    { name: 'Team Hotel Hunters', code: 'HOTEL', routeIndex: 8 },
-    { name: 'Team India Innovators', code: 'INDIA', routeIndex: 9 },
-    { name: 'Team Juliet Juggernauts', code: 'JULIET', routeIndex: 10 },
-    { name: 'Team Kilo Knights', code: 'KILO', routeIndex: 11 },
-    { name: 'Team Lima Legends', code: 'LIMA', routeIndex: 12 },
-    { name: 'Team Mike Mavericks', code: 'MIKE', routeIndex: 13 },
-    { name: 'Team November Nomads', code: 'NOVEMBER', routeIndex: 14 },
-    { name: 'Team Oscar Overlords', code: 'OSCAR', routeIndex: 15 },
-    { name: 'Team Papa Phantoms', code: 'PAPA', routeIndex: 16 },
+    { name: 'Cntrl Alt Defeat', code: 'CTRLDEF', routeIndex: 1 },
+    { name: 'Treasure Squad', code: 'TRSQUAD', routeIndex: 2 },
+    { name: 'Treasure Trio', code: 'TRTRIO', routeIndex: 3 },
+    { name: 'Enigma', code: 'ENIGMA', routeIndex: 4 },
+    { name: 'Lanterns', code: 'LANTERNS', routeIndex: 5 },
+    { name: 'Ojes', code: 'OJES', routeIndex: 6 },
+    { name: 'Clueless Guys', code: 'CLUELESS', routeIndex: 7 },
+    { name: 'Winners Pothumukk', code: 'WINNERS', routeIndex: 8 },
+    { name: 'Parippuvada', code: 'PARIPPUVADA', routeIndex: 9 },
+    { name: 'Tm Dolfy', code: 'TMDOLFY', routeIndex: 10 },
+    { name: 'Susu', code: 'SUSU', routeIndex: 11 },
+    { name: 'Thankom', code: 'THANKOM', routeIndex: 12 },
+    { name: 'Electrical', code: 'ELECTRICAL', routeIndex: 13 },
+    { name: 'Team 14', code: 'TEAM14', routeIndex: 14 },
+    { name: 'Team 15', code: 'TEAM15', routeIndex: 15 },
+    { name: 'Team 16', code: 'TEAM16', routeIndex: 16 },
   ];
 
   for (const t of teamDefinitions) {
@@ -262,7 +262,7 @@ async function main() {
       },
     });
   }
-  console.log(`👥 Seeded ${teamDefinitions.length} participant teams with 16 unique non-linear routes (Password: team123).`);
+  console.log(`👥 Seeded ${teamDefinitions.length} participant teams with unique non-linear routes (Password: team123).`);
   console.log('✅ Database seeding complete!');
 }
 
