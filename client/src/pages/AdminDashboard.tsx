@@ -1981,22 +1981,6 @@ export const AdminDashboard: React.FC = () => {
                         📍 {qr.title}
                       </div>
                     )}
-
-                    {qr.trollQuote && (
-                      <div style={{
-                        display: 'inline-block',
-                        fontSize: '11px',
-                        color: qr.trollQuote.includes('CGPA') ? '#b45309' : '#0369a1',
-                        background: qr.trollQuote.includes('CGPA') ? '#fef3c7' : '#e0f2fe',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        border: qr.trollQuote.includes('CGPA') ? '1px solid #fde68a' : '1px solid #bae6fd',
-                        marginTop: '4px',
-                        fontWeight: 700,
-                      }}>
-                        {qr.trollQuote.includes('CGPA') ? '🔥 CGPA Room Temp Roast' : '🗣️ Malayalam Meme Quote'}
-                      </div>
-                    )}
                   </div>
 
                   {/* QR Image Box */}
@@ -3047,14 +3031,14 @@ export const AdminDashboard: React.FC = () => {
                   }}
                   style={{ marginBottom: '8px' }}
                 >
-                  <option value="DEFAULT">Preset 1: Malayalam Meme ("ഇരുട്ടുപിടിച്ച മൂലകളിൽ...")</option>
-                  <option value="CGPA">Preset 2: CGPA Roast ("If you analyzed your lecture slides...")</option>
-                  <option value="CUSTOM">Custom Roast Message...</option>
+                  <option value="DEFAULT">Troll Screen Message 1 ("ഇരുട്ടുപിടിച്ച മൂലകളിൽ...")</option>
+                  <option value="CGPA">Troll Screen Message 2 ("If you analyzed your lecture slides...")</option>
+                  <option value="CUSTOM">Custom Troll Screen Message...</option>
                 </select>
                 <textarea
                   rows={3}
                   className="input-field"
-                  placeholder="Type custom roast message or edit preset above..."
+                  placeholder="Type custom troll message or select a preset above..."
                   value={newFakeTrollQuote}
                   onChange={(e) => setNewFakeTrollQuote(e.target.value)}
                   style={{ fontSize: '12px' }}
