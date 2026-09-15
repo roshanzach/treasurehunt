@@ -39,14 +39,15 @@ async function main() {
     },
   });
 
-  // 3. Clear existing questions & records
+  // 3. Clear transient session and security records
   await prisma.unlockedKey.deleteMany();
   await prisma.submission.deleteMany();
   await prisma.securityLog.deleteMany();
   await prisma.deviceSession.deleteMany();
-  await prisma.question.deleteMany();
 
-  // 4. Seed the 10 Campus Checkpoints with Cryptic Clues (NO direct location names in hints)
+  // 4. Seed the 10 Campus Checkpoints ONLY if no questions exist in DB
+  const existingQuestionsCount = await prisma.question.count();
+  if (existingQuestionsCount === 0) {
   const checkpoints = [
     {
       level: 1,
@@ -221,10 +222,13 @@ async function main() {
     },
   ];
 
-  for (const cp of checkpoints) {
-    await prisma.question.create({ data: cp });
+    for (const cp of checkpoints) {
+      await prisma.question.create({ data: cp });
+    }
+    console.log(`🗺️  Seeded ${checkpoints.length} campus checkpoint locations.`);
+  } else {
+    console.log(`ℹ️  Preserved ${existingQuestionsCount} existing custom questions in database.`);
   }
-  console.log(`🗺️  Seeded ${checkpoints.length} campus checkpoint locations with cryptic clues.`);
 
   // 5. Seed Participant Teams with Unique Non-Linear Campus Routes
   await prisma.team.deleteMany();
