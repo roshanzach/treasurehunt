@@ -23,6 +23,8 @@ import {
   Key,
   Navigation,
   BookOpen,
+  AlertOctagon,
+  Ghost,
 } from 'lucide-react';
 import { getMediaUrl, detectMediaType } from '../utils/media';
 
@@ -81,6 +83,7 @@ export const HuntPage: React.FC = () => {
   const [activeCheckpoint, setActiveCheckpoint] = useState<ActiveCheckpointInfo | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [totalQuestions, setTotalQuestions] = useState(10);
+  const [isFakeQRTrollOpen, setIsFakeQRTrollOpen] = useState(false);
 
   // Anti-Cheat Engine Hook
   const { warningModalOpen, lastViolationReason, violationCount, dismissWarning } = useAntiCheat(true);
@@ -135,6 +138,12 @@ export const HuntPage: React.FC = () => {
       });
 
       const data = await res.json();
+
+      if (data.status === 'FAKE_QR' || data.isFake) {
+        sound.playError();
+        setIsFakeQRTrollOpen(true);
+        return;
+      }
 
       if (!res.ok) {
         if (data.status === 'KEY_REQUIRED') {
@@ -995,6 +1004,112 @@ export const HuntPage: React.FC = () => {
         violationCount={violationCount}
         onDismiss={dismissWarning}
       />
+
+      {/* Decoy / Fake QR Troll Modal */}
+      {isFakeQRTrollOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.92)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '16px',
+        }}>
+          <div className="glass-panel-gold animate-fade-in" style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '24px',
+            borderRadius: '20px',
+            border: '2px solid rgba(239, 68, 68, 0.7)',
+            boxShadow: '0 0 40px rgba(239, 68, 68, 0.4)',
+            background: 'rgba(15, 23, 42, 0.96)',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid #ef4444',
+              color: '#fca5a5',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: '16px',
+            }}>
+              <AlertOctagon size={15} color="#ef4444" />
+              <span>DECOY CHECKPOINT TRAPPED!</span>
+              <Ghost size={15} color="#ef4444" />
+            </div>
+
+            <div style={{
+              width: '100%',
+              maxWidth: '300px',
+              margin: '0 auto 16px',
+              borderRadius: '14px',
+              overflow: 'hidden',
+              border: '3px solid #fbbf24',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+              background: '#000',
+            }}>
+              <img
+                src="/fake-qr-troll.jpg"
+                alt="Decoy Troll"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '300px',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+
+            <div style={{
+              fontSize: '18px',
+              lineHeight: '1.45',
+              fontWeight: 800,
+              color: '#fbbf24',
+              marginBottom: '14px',
+              textShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
+              padding: '0 4px',
+            }}>
+              "ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?"
+            </div>
+
+            <p style={{
+              fontSize: '12px',
+              color: '#94a3b8',
+              lineHeight: '1.4',
+              marginBottom: '20px',
+            }}>
+              ⚠️ You scanned a fake decoy QR! Review your active location riddle in the portal and look only for genuine checkpoints.
+            </p>
+
+            <button
+              onClick={() => setIsFakeQRTrollOpen(false)}
+              className="btn-gold"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: 800,
+              }}
+            >
+              Return to Active Riddle
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

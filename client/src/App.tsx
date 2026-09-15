@@ -9,6 +9,8 @@ import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminWarningPopup } from './components/AdminWarningPopup';
 
+import { FakeQRPage } from './pages/FakeQRPage';
+
 // Route Guards
 const ParticipantRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, token, isDeviceApproved, isLoading } = useAuth();
@@ -85,6 +87,8 @@ export const AppContent: React.FC = () => {
             </AdminRoute>
           }
         />
+        <Route path="/fake-qr" element={<FakeQRPage />} />
+        <Route path="/trap" element={<FakeQRPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

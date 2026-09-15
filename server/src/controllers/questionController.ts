@@ -256,3 +256,127 @@ export async function getQuestionQRCode(req: Request, res: Response): Promise<vo
     res.status(500).json({ error: 'Failed to generate QR code' });
   }
 }
+
+export const DECOY_CHECKPOINTS = [
+  {
+    id: 'decoy-1',
+    code: 'QR-DECOY-VAULT-01',
+    title: 'The Hidden Archive',
+    locationName: 'Mystery Vault',
+    accessKey: 'VAULT9',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Secret Vault Checkpoint',
+  },
+  {
+    id: 'decoy-2',
+    code: 'QR-DECOY-STAIRS-02',
+    title: 'The Forgotten Stairwell',
+    locationName: 'Secret Overpass',
+    accessKey: 'PASS7X',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Overpass Checkpoint',
+  },
+  {
+    id: 'decoy-3',
+    code: 'QR-DECOY-GROVE-03',
+    title: 'The Shaded Grove',
+    locationName: 'Ancient Botanical Relic',
+    accessKey: 'RELIC4',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Grove Checkpoint',
+  },
+  {
+    id: 'decoy-4',
+    code: 'QR-DECOY-PILLAR-04',
+    title: 'Quadrangle Concrete Pillar',
+    locationName: 'Shadow Passage',
+    accessKey: 'SHAD8M',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Passage Checkpoint',
+  },
+  {
+    id: 'decoy-5',
+    code: 'QR-DECOY-YARD-05',
+    title: 'Old Transformer Yard',
+    locationName: 'Campus Labyrinth',
+    accessKey: 'LABY2Z',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Labyrinth Checkpoint',
+  },
+  {
+    id: 'decoy-6',
+    code: 'QR-DECOY-BALCONY-06',
+    title: 'The High Balcony',
+    locationName: 'Enigma Citadel',
+    accessKey: 'ENIG3K',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Citadel Checkpoint',
+  },
+  {
+    id: 'decoy-7',
+    code: 'QR-DECOY-BASEMENT-07',
+    title: 'Basement Corridors',
+    locationName: 'Phantom Archives',
+    accessKey: 'PHAN5R',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Archive Checkpoint',
+  },
+  {
+    id: 'decoy-8',
+    code: 'QR-DECOY-BOTANIC-08',
+    title: 'Botanical Perimeter',
+    locationName: 'Lost Campus Caché',
+    accessKey: 'LOST1W',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Caché Checkpoint',
+  },
+];
+
+export async function getFakeQRCodes(req: Request, res: Response): Promise<void> {
+  try {
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol === 'https' ? 'https' : 'http';
+
+    const fakeQRCodes = await Promise.all(
+      DECOY_CHECKPOINTS.map(async (decoy, index) => {
+        const clientUrl = `${protocol}://${host}/fake-qr?code=${decoy.code}`;
+        const qrDataUrl = await QRCode.toDataURL(clientUrl, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          width: 400,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+
+        return {
+          id: decoy.id,
+          level: `DECOY #${index + 1}`,
+          decoyNumber: index + 1,
+          locationName: decoy.locationName,
+          title: decoy.title,
+          accessKey: decoy.accessKey,
+          qrIdentifier: decoy.code,
+          tag: decoy.tag,
+          subtitle: decoy.subtitle,
+          huntUrl: clientUrl,
+          qrDataUrl,
+          trollImage: '/fake-qr-troll.jpg',
+          trollQuote:
+            'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+        };
+      })
+    );
+
+    res.json({
+      fakeQRCodes,
+      trollImage: '/fake-qr-troll.jpg',
+      trollQuote:
+        'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+    });
+  } catch (error) {
+    console.error('getFakeQRCodes error:', error);
+    res.status(500).json({ error: 'Failed to generate decoy QR codes' });
+  }
+}

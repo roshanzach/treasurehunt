@@ -100,6 +100,38 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
       return;
     }
 
+    const normalizedQR = String(qrIdentifier).trim().toUpperCase();
+
+    // Intercept Decoy / Fake Trap QR
+    if (
+      normalizedQR.includes('DECOY') ||
+      normalizedQR.includes('FAKE') ||
+      normalizedQR.includes('TRAP')
+    ) {
+      // Log troll telemetry
+      try {
+        await prisma.securityLog.create({
+          data: {
+            teamId,
+            eventType: 'FAKE_QR_SCANNED',
+            severity: 'LOW',
+            details: `Team scanned decoy checkpoint trap: "${qrIdentifier}"`,
+          },
+        });
+      } catch (logErr) {
+        console.warn('Failed to log fake QR scan:', logErr);
+      }
+
+      res.json({
+        status: 'FAKE_QR',
+        isFake: true,
+        trollImage: '/fake-qr-troll.jpg',
+        trollQuote:
+          'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+      });
+      return;
+    }
+
     const team = await prisma.team.findUnique({
       where: { id: teamId },
     });

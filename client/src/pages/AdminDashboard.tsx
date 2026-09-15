@@ -23,6 +23,10 @@ import {
   Lock,
   KeyRound,
   Compass,
+  Ghost,
+  AlertOctagon,
+  Download,
+  Eye,
 } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
 
@@ -131,7 +135,7 @@ export const AdminDashboard: React.FC = () => {
   const { token } = useAuth();
   const { socket } = useSocket();
 
-  const [activeTab, setActiveTab] = useState<'TEAMS' | 'QUESTIONS' | 'QR_CARDS' | 'SUBMISSIONS' | 'SECURITY' | 'LEADERBOARD' | 'SETTINGS'>('TEAMS');
+  const [activeTab, setActiveTab] = useState<'TEAMS' | 'QUESTIONS' | 'QR_CARDS' | 'FAKE_QR' | 'SUBMISSIONS' | 'SECURITY' | 'LEADERBOARD' | 'SETTINGS'>('TEAMS');
 
   // Data states
   const [teams, setTeams] = useState<TeamItem[]>([]);
@@ -172,8 +176,12 @@ export const AdminDashboard: React.FC = () => {
   const [qCustomAccessKey, setQCustomAccessKey] = useState('');
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
-  // QR Code Printable Preview
+  // QR Code Printable Preview (Main Questions)
   const [qrCodeDataList, setQrCodeDataList] = useState<any[]>([]);
+
+  // Decoy / Fake QR Code Preview & States
+  const [fakeQrCodeDataList, setFakeQrCodeDataList] = useState<any[]>([]);
+  const [isFakeQRTrollPreviewOpen, setIsFakeQRTrollPreviewOpen] = useState(false);
 
   // Direct Warning Modal
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
@@ -276,6 +284,20 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchFakeQRCodes = async () => {
+    try {
+      const res = await fetch('/api/admin/fake-qr-codes', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFakeQrCodeDataList(data.fakeQRCodes || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const reloadAll = async () => {
     setLoading(true);
     await Promise.all([
@@ -285,6 +307,7 @@ export const AdminDashboard: React.FC = () => {
       fetchSecurityLogs(),
       fetchLeaderboard(),
       fetchSettings(),
+      fetchFakeQRCodes(),
     ]);
     setLoading(false);
   };
@@ -296,6 +319,9 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'QR_CARDS' && questions.length > 0) {
       fetchQRCodes();
+    }
+    if (activeTab === 'FAKE_QR') {
+      fetchFakeQRCodes();
     }
   }, [activeTab, questions]);
 
@@ -841,6 +867,191 @@ export const AdminDashboard: React.FC = () => {
     printWindow.document.close();
   };
 
+  // Dedicated 2-per-page PDF Print Handler for Decoy / Fake QRs
+  const handlePrintFakeQRCards = () => {
+    if (!fakeQrCodeDataList || fakeQrCodeDataList.length === 0) {
+      alert('Decoy QR codes are still generating. Please wait a moment and try again.');
+      return;
+    }
+
+    // Group into strict pairs of 2 cards per page
+    const pages: any[][] = [];
+    for (let i = 0; i < fakeQrCodeDataList.length; i += 2) {
+      pages.push(fakeQrCodeDataList.slice(i, i + 2));
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Treasure Hunt Decoy Trap QR Badges</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      background: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .print-page {
+      width: 210mm;
+      height: 296mm;
+      padding: 8mm 14mm;
+      page-break-after: always;
+      break-after: page;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+    }
+    .print-page:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    .badge-card {
+      width: 100%;
+      height: 134mm;
+      border: 3px dashed #dc2626;
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      background: #ffffff;
+    }
+    .badge-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: #b91c1c;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .badge-title {
+      font-size: 21px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .badge-subtitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #b91c1c;
+      margin-top: 2px;
+    }
+    .qr-wrapper {
+      background: #000000;
+      padding: 8px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 4px 0;
+    }
+    .qr-img {
+      width: 175px;
+      height: 175px;
+      display: block;
+      border-radius: 6px;
+    }
+    .badge-key {
+      font-size: 13px;
+      color: #334155;
+      margin-bottom: 3px;
+    }
+    .badge-key strong {
+      font-family: monospace;
+      font-size: 15px;
+      color: #0f172a;
+      letter-spacing: 0.08em;
+      background: #fee2e2;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #fca5a5;
+    }
+    .badge-instruction {
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  ${pages
+    .map(
+      (pair) => `
+    <div class="print-page">
+      ${pair
+        .map(
+          (qr) => `
+        <div class="badge-card">
+          <div>
+            <div class="badge-tag">Campus Treasure Hunt Checkpoint</div>
+            <div class="badge-title">${qr.locationName || qr.title}</div>
+            <div class="badge-subtitle">📍 ${qr.title}</div>
+          </div>
+
+          <div class="qr-wrapper">
+            <img class="qr-img" src="${qr.qrDataUrl}" alt="${qr.title}" />
+          </div>
+
+          <div>
+            <div class="badge-key">
+              Checkpoint Access Key: <strong>${qr.accessKey}</strong>
+            </div>
+            <div class="badge-instruction">
+              Scan with in-app camera scanner to reveal this station's puzzle
+            </div>
+          </div>
+        </div>
+      `
+        )
+        .join('')}
+    </div>
+  `
+    )
+    .join('')}
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 350);
+    };
+  </script>
+</body>
+</html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+  const downloadQRImage = (qrDataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = qrDataUrl;
+    link.download = `${filename}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
       
@@ -897,6 +1108,21 @@ export const AdminDashboard: React.FC = () => {
             >
               <Printer size={16} />
               <span>Printable QR Badges</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('FAKE_QR')}
+              className={activeTab === 'FAKE_QR' ? 'btn-gold' : 'btn-secondary'}
+              style={{
+                padding: '8px 14px',
+                fontSize: '13px',
+                border: activeTab === 'FAKE_QR' ? '1px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.4)',
+                background: activeTab === 'FAKE_QR' ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
+                color: activeTab === 'FAKE_QR' ? '#ffffff' : '#fca5a5',
+              }}
+            >
+              <Ghost size={16} />
+              <span>Decoy / Fake QRs ({fakeQrCodeDataList.length || 8})</span>
             </button>
 
             <button
@@ -1444,6 +1670,250 @@ export const AdminDashboard: React.FC = () => {
 
                     <div style={{ fontSize: '11px', color: '#64748b' }}>
                       Scan with in-app scanner to unlock this station's puzzle
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3.5: DECOY / FAKE QR CODE BADGES (SEPARATE SECTION) */}
+        {activeTab === 'FAKE_QR' && (
+          <div className="animate-fade-in">
+            {/* Header & Print Control Bar */}
+            <div className="no-print glass-panel" style={{ padding: '20px 24px', marginBottom: '24px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                    <Ghost size={24} color="#ef4444" />
+                    <h2 style={{ fontSize: '20px', color: '#fca5a5', margin: 0 }}>Decoy & Trap Checkpoint QR Badges</h2>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Separate download section for deceptive campus trap QRs. When scanned by participants, these trigger the troll screen with photo and Malayalam quote!
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setIsFakeQRTrollPreviewOpen(true)}
+                    className="btn-secondary"
+                    style={{ padding: '9px 16px', fontSize: '13px', gap: '6px' }}
+                  >
+                    <Eye size={16} color="#fbbf24" />
+                    <span>Preview Troll Screen</span>
+                  </button>
+
+                  <button
+                    onClick={handlePrintFakeQRCards}
+                    className="btn-gold"
+                    style={{
+                      padding: '9px 18px',
+                      fontSize: '13px',
+                      background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                      border: '1px solid #fca5a5',
+                      color: '#ffffff',
+                    }}
+                  >
+                    <Printer size={16} />
+                    <span>Download PDF / Print Decoy Badges (2 Per Page)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Troll Showcase Card */}
+            <div className="no-print glass-panel" style={{
+              padding: '24px',
+              marginBottom: '24px',
+              border: '2px solid rgba(245, 158, 11, 0.4)',
+              background: 'rgba(15, 23, 42, 0.85)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <AlertOctagon size={20} color="#fbbf24" />
+                <h3 style={{ fontSize: '16px', color: '#fbbf24', margin: 0 }}>
+                  Active Troll Payload Preview (What Players See When Scanning Any Decoy QR)
+                </h3>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '20px',
+                alignItems: 'center',
+                background: 'rgba(0, 0, 0, 0.4)',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+              }}>
+                {/* Photo */}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    maxWidth: '220px',
+                    margin: '0 auto',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    border: '2px solid #fbbf24',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.5)',
+                  }}>
+                    <img
+                      src="/fake-qr-troll.jpg"
+                      alt="Decoy Troll"
+                      style={{ width: '100%', height: 'auto', display: 'block' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                    Uploaded Troll Meme Photo
+                  </div>
+                </div>
+
+                {/* Malayalam Quote & Details */}
+                <div>
+                  <div style={{
+                    fontSize: '18px',
+                    lineHeight: '1.5',
+                    fontWeight: 800,
+                    color: '#fbbf24',
+                    marginBottom: '12px',
+                    textShadow: '0 2px 8px rgba(245, 158, 11, 0.25)',
+                  }}>
+                    "ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?"
+                  </div>
+
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '14px' }}>
+                    ⚡ When any participant team scans one of the Decoy QR badges below with the in-app camera or a phone camera, this photo and Malayalam quote will immediately take over their screen, and a <code>FAKE_QR_SCANNED</code> event will be logged in the Cheating Hub!
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      padding: '4px 10px',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#fca5a5',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                    }}>
+                      🚫 0 Progress / No Points
+                    </span>
+                    <span style={{
+                      padding: '4px 10px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      color: '#fbbf24',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                    }}>
+                      📡 Real-time Organizer Telemetry
+                    </span>
+                    <span style={{
+                      padding: '4px 10px',
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      color: '#38bdf8',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                    }}>
+                      🔊 Troll Error Sound Triggered
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid of Decoy QR Badges */}
+            <div className="print-qr-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              {fakeQrCodeDataList.map((qr) => (
+                <div
+                  key={qr.qrIdentifier}
+                  className="print-qr-card"
+                  style={{
+                    background: '#ffffff',
+                    color: '#000000',
+                    borderRadius: '16px',
+                    padding: '20px 24px',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    border: '4px solid #ef4444',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      color: '#b91c1c',
+                      marginBottom: '4px'
+                    }}>
+                      CAMPUS TREASURE HUNT CHECKPOINT
+                    </div>
+
+                    <h3 style={{ fontSize: '19px', fontWeight: 900, marginBottom: '2px', color: '#0f172a' }}>
+                      {qr.locationName || qr.title}
+                    </h3>
+
+                    {qr.locationName && (
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#dc2626' }}>
+                        📍 {qr.title}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* QR Image Box */}
+                  <div style={{
+                    display: 'inline-block',
+                    padding: '8px',
+                    background: '#000000',
+                    borderRadius: '12px',
+                    margin: '12px auto',
+                  }}>
+                    <img
+                      src={qr.qrDataUrl}
+                      alt={qr.title}
+                      style={{ width: '180px', height: '180px', display: 'block', borderRadius: '8px' }}
+                    />
+                  </div>
+
+                  <div>
+                    {qr.accessKey && (
+                      <div style={{ fontSize: '13px', color: '#334155', marginBottom: '6px' }}>
+                        Checkpoint Access Key: <strong style={{ fontFamily: 'monospace', fontSize: '14px', color: '#0f172a', letterSpacing: '0.08em', background: '#fee2e2', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fca5a5' }}>{qr.accessKey}</strong>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '12px' }}>
+                      Scan with in-app scanner to unlock this station's puzzle
+                    </div>
+
+                    {/* Action Bar on Card (Hidden when printing) */}
+                    <div className="no-print" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => downloadQRImage(qr.qrDataUrl, qr.qrIdentifier)}
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px', gap: '4px', color: '#0f172a', borderColor: '#cbd5e1' }}
+                      >
+                        <Download size={13} />
+                        <span>Download PNG</span>
+                      </button>
+
+                      <a
+                        href={`/fake-qr?code=${qr.qrIdentifier}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px', gap: '4px', color: '#dc2626', borderColor: '#fca5a5', textDecoration: 'none' }}
+                      >
+                        <Eye size={13} />
+                        <span>Test Link</span>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -2202,6 +2672,103 @@ export const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. TROLL SCREEN PREVIEW MODAL FOR ADMIN */}
+      {isFakeQRTrollPreviewOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '16px'
+        }}>
+          <div className="glass-panel-gold animate-fade-in" style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '24px',
+            borderRadius: '20px',
+            border: '2px solid rgba(239, 68, 68, 0.7)',
+            boxShadow: '0 0 40px rgba(239, 68, 68, 0.4)',
+            background: 'rgba(15, 23, 42, 0.96)',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid #ef4444',
+              color: '#fca5a5',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginBottom: '16px',
+            }}>
+              <AlertOctagon size={15} color="#ef4444" />
+              <span>DECOY CHECKPOINT TRAPPED!</span>
+              <Ghost size={15} color="#ef4444" />
+            </div>
+
+            <div style={{
+              width: '100%',
+              maxWidth: '300px',
+              margin: '0 auto 16px',
+              borderRadius: '14px',
+              overflow: 'hidden',
+              border: '3px solid #fbbf24',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+              background: '#000',
+            }}>
+              <img
+                src="/fake-qr-troll.jpg"
+                alt="Decoy Troll"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '300px',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+
+            <div style={{
+              fontSize: '18px',
+              lineHeight: '1.45',
+              fontWeight: 800,
+              color: '#fbbf24',
+              marginBottom: '14px',
+              textShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
+              padding: '0 4px',
+            }}>
+              "ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?"
+            </div>
+
+            <p style={{
+              fontSize: '12px',
+              color: '#94a3b8',
+              lineHeight: '1.4',
+              marginBottom: '20px',
+            }}>
+              ⚠️ Live Simulation: This is the exact screen and Malayalam visual feedback participant teams see upon scanning any fake decoy QR badge on campus.
+            </p>
+
+            <button
+              onClick={() => setIsFakeQRTrollPreviewOpen(false)}
+              className="btn-gold"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: 800,
+              }}
+            >
+              Close Troll Preview
+            </button>
           </div>
         </div>
       )}
