@@ -2,13 +2,11 @@ import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { validateAnswer } from '../utils/answerValidator';
 import { socketEvents } from '../sockets/huntSocket';
-
-/**
- * Calculates the question level for a given team and step number in their circular route.
- */
-function calculateTargetLevel(startLevel: number, step: number, totalQuestions: number): number {
-  return ((startLevel - 1 + (step - 1)) % totalQuestions) + 1;
-}
+import {
+  getTargetStationForStep,
+  isStationAlreadySolved,
+  getTeamRoute,
+} from '../utils/routePlanner';
 
 export async function getHuntStatus(req: Request, res: Response): Promise<void> {
   try {
@@ -40,7 +38,7 @@ export async function getHuntStatus(req: Request, res: Response): Promise<void> 
 
     const safeTotal = totalQuestions > 0 ? totalQuestions : 10;
     const currentStep = Math.min(team.currentLevel, safeTotal);
-    const targetLevel = calculateTargetLevel(team.startLevel, currentStep, safeTotal);
+    const targetLevel = getTargetStationForStep(team, currentStep, safeTotal);
 
     // Fetch target question for current step
     const targetQuestion = await prisma.question.findUnique({
@@ -135,18 +133,12 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
 
     // Determine what question this team should be at right now
     const currentStep = team.currentLevel;
-    const currentTargetLevel = calculateTargetLevel(team.startLevel, currentStep, safeTotal);
+    const currentTargetLevel = getTargetStationForStep(team, currentStep, safeTotal);
 
     // Check if the scanned question is the current target question
     if (question.level !== currentTargetLevel) {
       // Check if this question was already solved in a previous step of this team's route
-      let wasAlreadySolved = false;
-      for (let s = 1; s < currentStep; s++) {
-        if (calculateTargetLevel(team.startLevel, s, safeTotal) === question.level) {
-          wasAlreadySolved = true;
-          break;
-        }
-      }
+      const wasAlreadySolved = isStationAlreadySolved(team, question.level, currentStep, safeTotal);
 
       if (wasAlreadySolved) {
         res.json({
@@ -341,7 +333,7 @@ export async function submitAnswer(req: Request, res: Response): Promise<void> {
     // Calculate the next target question in the team's route
     let nextQuestion = null;
     if (!isHuntCompleted) {
-      const nextTargetLevel = calculateTargetLevel(team.startLevel, newStep, safeTotal);
+      const nextTargetLevel = getTargetStationForStep(team, newStep, safeTotal);
       nextQuestion = await prisma.question.findUnique({
         where: { level: nextTargetLevel },
       });
@@ -476,7 +468,7 @@ export async function getInventory(req: Request, res: Response): Promise<void> {
     const inventory = [];
 
     // Step 1: Always include the Initial Starting Point Clue
-    const startTargetLevel = calculateTargetLevel(team.startLevel, 1, safeTotal);
+    const startTargetLevel = getTargetStationForStep(team, 1, safeTotal);
     const startQ = await prisma.question.findUnique({
       where: { level: startTargetLevel },
     });
@@ -500,7 +492,7 @@ export async function getInventory(req: Request, res: Response): Promise<void> {
     // Steps 2 to currentLevel: Add clues revealed upon completing earlier steps
     const maxUnlockedStep = Math.min(team.currentLevel, safeTotal);
     for (let s = 2; s <= maxUnlockedStep; s++) {
-      const stepTargetLevel = calculateTargetLevel(team.startLevel, s, safeTotal);
+      const stepTargetLevel = getTargetStationForStep(team, s, safeTotal);
       const q = await prisma.question.findUnique({
         where: { level: stepTargetLevel },
       });

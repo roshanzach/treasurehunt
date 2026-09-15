@@ -21,7 +21,8 @@ model Team {
   teamName       String          @unique
   teamCode       String          @unique
   passwordHash   String
-  startLevel     Int             @default(1) // Checkpoint level (1-10) where this team starts
+  startLevel     Int             @default(1) // Checkpoint level (1-10) or route index
+  customRoute    String?         // Comma-separated station sequence (e.g. "4,9,2,7,10,5,8,1,6,3")
   currentLevel   Int             @default(1) // Step in their 10-level sequence (1 to 10)
   isCompleted    Boolean         @default(false)
   completedAt    DateTime?

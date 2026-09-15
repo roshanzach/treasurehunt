@@ -82,6 +82,7 @@ app.get('/api/hunt/inventory', authenticateToken, requireTeam, huntCtrl.getInven
 // 4. Admin Routes (Protected by authenticateToken + requireAdmin)
 app.get('/api/admin/teams', authenticateToken, requireAdmin, adminCtrl.getTeams);
 app.post('/api/admin/teams', authenticateToken, requireAdmin, adminCtrl.createTeam);
+app.put('/api/admin/teams/:id', authenticateToken, requireAdmin, adminCtrl.updateTeam);
 app.delete('/api/admin/teams/:id', authenticateToken, requireAdmin, adminCtrl.deleteTeam);
 app.patch('/api/admin/teams/:id/toggle-suspend', authenticateToken, requireAdmin, adminCtrl.toggleSuspendTeam);
 app.patch('/api/admin/teams/:id/change-password', authenticateToken, requireAdmin, adminCtrl.changeTeamPassword);

@@ -226,53 +226,43 @@ async function main() {
   }
   console.log(`🗺️  Seeded ${checkpoints.length} campus checkpoint locations with cryptic clues.`);
 
-  // 5. Seed Demo Teams with Distinct Starting Points
-  const team1Pass = await bcrypt.hash('alpha123', 10);
-  const team2Pass = await bcrypt.hash('galleon123', 10);
-  const team3Pass = await bcrypt.hash('phoenix123', 10);
-  const team4Pass = await bcrypt.hash('titan123', 10);
-
+  // 5. Seed 16 Participant Teams with 16 Distinct Non-Linear Campus Routes
   await prisma.team.deleteMany();
 
-  const teams = [
-    {
-      teamName: 'Team Alpha Pioneers',
-      teamCode: 'ALPHA',
-      passwordHash: team1Pass,
-      startLevel: 1, // Starts at Station 1
-      currentLevel: 1,
-      status: 'PENDING_APPROVAL',
-    },
-    {
-      teamName: 'The Golden Galleon',
-      teamCode: 'GALLEON',
-      passwordHash: team2Pass,
-      startLevel: 4, // Starts at Station 4
-      currentLevel: 1,
-      status: 'PENDING_APPROVAL',
-    },
-    {
-      teamName: 'Phoenix Seekers',
-      teamCode: 'PHOENIX',
-      passwordHash: team3Pass,
-      startLevel: 7, // Starts at Station 7
-      currentLevel: 1,
-      status: 'PENDING_APPROVAL',
-    },
-    {
-      teamName: 'Titan Vanguard',
-      teamCode: 'TITAN',
-      passwordHash: team4Pass,
-      startLevel: 10, // Starts at Station 10
-      currentLevel: 1,
-      status: 'PENDING_APPROVAL',
-    },
+  const defaultPassword = await bcrypt.hash('team123', 10);
+
+  const teamDefinitions = [
+    { name: 'Team Alpha Pioneers', code: 'ALPHA', routeIndex: 1 },
+    { name: 'Team Bravo Navigators', code: 'BRAVO', routeIndex: 2 },
+    { name: 'Team Charlie Crusaders', code: 'CHARLIE', routeIndex: 3 },
+    { name: 'Team Delta Voyagers', code: 'DELTA', routeIndex: 4 },
+    { name: 'Team Echo Enigmas', code: 'ECHO', routeIndex: 5 },
+    { name: 'Team Foxtrot Pathfinders', code: 'FOXTROT', routeIndex: 6 },
+    { name: 'Team Golf Galleons', code: 'GOLF', routeIndex: 7 },
+    { name: 'Team Hotel Hunters', code: 'HOTEL', routeIndex: 8 },
+    { name: 'Team India Innovators', code: 'INDIA', routeIndex: 9 },
+    { name: 'Team Juliet Juggernauts', code: 'JULIET', routeIndex: 10 },
+    { name: 'Team Kilo Knights', code: 'KILO', routeIndex: 11 },
+    { name: 'Team Lima Legends', code: 'LIMA', routeIndex: 12 },
+    { name: 'Team Mike Mavericks', code: 'MIKE', routeIndex: 13 },
+    { name: 'Team November Nomads', code: 'NOVEMBER', routeIndex: 14 },
+    { name: 'Team Oscar Overlords', code: 'OSCAR', routeIndex: 15 },
+    { name: 'Team Papa Phantoms', code: 'PAPA', routeIndex: 16 },
   ];
 
-  for (const t of teams) {
-    await prisma.team.create({ data: t });
+  for (const t of teamDefinitions) {
+    await prisma.team.create({
+      data: {
+        teamName: t.name,
+        teamCode: t.code,
+        passwordHash: defaultPassword,
+        startLevel: t.routeIndex, // Routes 1 to 16
+        currentLevel: 1,
+        status: 'PENDING_APPROVAL',
+      },
+    });
   }
-  console.log(`👥 Seeded ${teams.length} participant teams with distributed starting checkpoints.`);
+  console.log(`👥 Seeded ${teamDefinitions.length} participant teams with 16 unique non-linear routes (Password: team123).`);
   console.log('✅ Database seeding complete!');
 }
 

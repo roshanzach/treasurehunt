@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../prisma';
 import { socketEvents } from '../sockets/huntSocket';
+import { getTeamRoute, PREDEFINED_ROUTES } from '../utils/routePlanner';
 
 export async function getTeams(req: Request, res: Response): Promise<void> {
   try {
@@ -25,13 +26,22 @@ export async function getTeams(req: Request, res: Response): Promise<void> {
     });
 
     const questionMap = new Map(questions.map((q) => [q.level, q.locationName || q.title]));
+    const safeTotal = questions.length > 0 ? questions.length : 10;
 
-    const enrichedTeams = teams.map((t) => ({
-      ...t,
-      startLocationName: questionMap.get(t.startLevel) || `Station ${t.startLevel}`,
-    }));
+    const enrichedTeams = teams.map((t) => {
+      const route = getTeamRoute(t, safeTotal);
+      const activeStep = Math.min(t.currentLevel, safeTotal);
+      const currentStation = route[activeStep - 1] || activeStep;
+      return {
+        ...t,
+        routeSequence: route,
+        startLocationName: questionMap.get(route[0]) || `Station ${route[0]}`,
+        currentStationLevel: currentStation,
+        currentStationName: questionMap.get(currentStation) || `Station ${currentStation}`,
+      };
+    });
 
-    res.json({ teams: enrichedTeams });
+    res.json({ teams: enrichedTeams, predefinedRoutes: PREDEFINED_ROUTES });
   } catch (error) {
     console.error('getTeams error:', error);
     res.status(500).json({ error: 'Failed to fetch teams' });
@@ -40,7 +50,7 @@ export async function getTeams(req: Request, res: Response): Promise<void> {
 
 export async function createTeam(req: Request, res: Response): Promise<void> {
   try {
-    const { teamName, teamCode, password, startLevel } = req.body;
+    const { teamName, teamCode, password, startLevel, customRoute } = req.body;
 
     if (!teamName || !teamCode || !password) {
       res.status(400).json({ error: 'Team name, code, and password are required' });
@@ -67,11 +77,9 @@ export async function createTeam(req: Request, res: Response): Promise<void> {
 
     let assignedStart = startLevel ? parseInt(String(startLevel), 10) : 1;
     if (!startLevel) {
-      // Auto balance starting points across all teams
+      // Auto balance among 16 unique route patterns
       const teamCount = await prisma.team.count();
-      const questionCount = await prisma.question.count({ where: { isActive: true } });
-      const safeQCount = questionCount > 0 ? questionCount : 10;
-      assignedStart = (teamCount % safeQCount) + 1;
+      assignedStart = (teamCount % 16) + 1;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -82,6 +90,7 @@ export async function createTeam(req: Request, res: Response): Promise<void> {
         teamCode: cleanCode,
         passwordHash,
         startLevel: assignedStart,
+        customRoute: customRoute && typeof customRoute === 'string' ? customRoute.trim() : null,
         currentLevel: 1,
         status: 'PENDING_APPROVAL',
       },
@@ -94,12 +103,42 @@ export async function createTeam(req: Request, res: Response): Promise<void> {
         teamName: team.teamName,
         teamCode: team.teamCode,
         startLevel: team.startLevel,
+        customRoute: team.customRoute,
         status: team.status,
       },
     });
   } catch (error) {
     console.error('createTeam error:', error);
     res.status(500).json({ error: 'Failed to create team' });
+  }
+}
+
+export async function updateTeam(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    const { teamName, teamCode, startLevel, customRoute } = req.body;
+
+    const team = await prisma.team.findUnique({ where: { id } });
+    if (!team) {
+      res.status(404).json({ error: 'Team not found' });
+      return;
+    }
+
+    const dataToUpdate: any = {};
+    if (teamName && teamName.trim()) dataToUpdate.teamName = teamName.trim();
+    if (teamCode && teamCode.trim()) dataToUpdate.teamCode = teamCode.trim().toUpperCase();
+    if (startLevel !== undefined) dataToUpdate.startLevel = parseInt(String(startLevel), 10);
+    if (customRoute !== undefined) dataToUpdate.customRoute = customRoute ? String(customRoute).trim() : null;
+
+    const updated = await prisma.team.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    res.json({ message: 'Team route and details updated successfully', team: updated });
+  } catch (error) {
+    console.error('updateTeam error:', error);
+    res.status(500).json({ error: 'Failed to update team' });
   }
 }
 

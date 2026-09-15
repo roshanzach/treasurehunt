@@ -22,8 +22,28 @@ import {
   Clock,
   Lock,
   KeyRound,
+  Compass,
 } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
+
+export const PREDEFINED_ROUTE_PATTERNS: Record<number, { name: string; sequence: number[]; start: number }> = {
+  1:  { name: 'Route 1', start: 1, sequence: [1, 6, 3, 8, 5, 10, 2, 7, 4, 9] },
+  2:  { name: 'Route 2', start: 2, sequence: [2, 7, 4, 9, 6, 1, 8, 3, 10, 5] },
+  3:  { name: 'Route 3', start: 3, sequence: [3, 8, 1, 6, 9, 4, 7, 2, 5, 10] },
+  4:  { name: 'Route 4', start: 4, sequence: [4, 9, 2, 7, 10, 5, 8, 1, 6, 3] },
+  5:  { name: 'Route 5', start: 5, sequence: [5, 10, 3, 8, 1, 6, 9, 4, 7, 2] },
+  6:  { name: 'Route 6', start: 6, sequence: [6, 1, 8, 3, 10, 5, 2, 7, 4, 9] },
+  7:  { name: 'Route 7', start: 7, sequence: [7, 2, 9, 4, 1, 6, 3, 8, 5, 10] },
+  8:  { name: 'Route 8', start: 8, sequence: [8, 3, 10, 5, 2, 7, 4, 9, 6, 1] },
+  9:  { name: 'Route 9', start: 9, sequence: [9, 4, 7, 2, 5, 10, 1, 6, 3, 8] },
+  10: { name: 'Route 10', start: 10, sequence: [10, 5, 2, 7, 4, 9, 6, 1, 8, 3] },
+  11: { name: 'Route 11', start: 1, sequence: [1, 8, 4, 10, 6, 2, 9, 5, 7, 3] },
+  12: { name: 'Route 12', start: 3, sequence: [3, 9, 6, 1, 8, 4, 10, 7, 2, 5] },
+  13: { name: 'Route 13', start: 5, sequence: [5, 2, 8, 3, 9, 6, 1, 10, 4, 7] },
+  14: { name: 'Route 14', start: 7, sequence: [7, 3, 10, 6, 2, 8, 4, 1, 9, 5] },
+  15: { name: 'Route 15', start: 9, sequence: [9, 5, 1, 7, 3, 10, 6, 2, 8, 4] },
+  16: { name: 'Route 16', start: 2, sequence: [2, 10, 6, 3, 7, 1, 9, 4, 8, 5] },
+};
 
 interface TeamItem {
   id: string;
@@ -31,6 +51,10 @@ interface TeamItem {
   teamCode: string;
   startLevel?: number;
   startLocationName?: string;
+  currentStationLevel?: number;
+  currentStationName?: string;
+  routeSequence?: number[];
+  customRoute?: string | null;
   currentLevel: number;
   isCompleted: boolean;
   completedAt: string | null;
@@ -124,6 +148,13 @@ export const AdminDashboard: React.FC = () => {
   const [newTeamCode, setNewTeamCode] = useState('');
   const [newTeamPassword, setNewTeamPassword] = useState('');
   const [newTeamStartLevel, setNewTeamStartLevel] = useState<number>(0); // 0 = Auto Balance
+  const [newTeamCustomRoute, setNewTeamCustomRoute] = useState<string>('');
+
+  // Edit Route Modal
+  const [isEditRouteModalOpen, setIsEditRouteModalOpen] = useState(false);
+  const [routeTargetTeam, setRouteTargetTeam] = useState<TeamItem | null>(null);
+  const [editRouteIndex, setEditRouteIndex] = useState<number>(1);
+  const [editCustomRoute, setEditCustomRoute] = useState<string>('');
 
   // Question Form Modal
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
@@ -415,6 +446,7 @@ export const AdminDashboard: React.FC = () => {
           teamCode: newTeamCode,
           password: newTeamPassword,
           startLevel: newTeamStartLevel > 0 ? newTeamStartLevel : undefined,
+          customRoute: newTeamCustomRoute.trim() || undefined,
         }),
       });
       if (res.ok) {
@@ -423,6 +455,7 @@ export const AdminDashboard: React.FC = () => {
         setNewTeamCode('');
         setNewTeamPassword('');
         setNewTeamStartLevel(0);
+        setNewTeamCustomRoute('');
         fetchTeams();
         fetchLeaderboard();
       } else {
@@ -431,6 +464,37 @@ export const AdminDashboard: React.FC = () => {
       }
     } catch (e) {
       alert('Network error creating team');
+    }
+  };
+
+  const handleUpdateTeamRoute = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!routeTargetTeam) return;
+
+    try {
+      const res = await fetch(`/api/admin/teams/${routeTargetTeam.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startLevel: editRouteIndex,
+          customRoute: editCustomRoute.trim() || null,
+        }),
+      });
+
+      if (res.ok) {
+        setIsEditRouteModalOpen(false);
+        fetchTeams();
+        fetchLeaderboard();
+        alert(`Route path updated successfully for ${routeTargetTeam.teamName}!`);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to update route');
+      }
+    } catch (err) {
+      alert('Network error updating team route');
     }
   };
 
@@ -909,8 +973,8 @@ export const AdminDashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <div style={{ flex: 1, minWidth: '300px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                           <h3 style={{ fontSize: '18px', color: '#f8fafc' }}>{team.teamName}</h3>
                           <span style={{
                             background: 'rgba(245, 158, 11, 0.15)',
@@ -957,8 +1021,83 @@ export const AdminDashboard: React.FC = () => {
                           )}
                         </div>
 
+                        {/* Campus Route Sequence Flow */}
+                        <div style={{
+                          marginTop: '10px',
+                          marginBottom: '10px',
+                          padding: '10px 14px',
+                          background: 'rgba(15, 23, 42, 0.65)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '8px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Compass size={14} color="#fbbf24" />
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#fbbf24' }}>
+                                {team.customRoute ? 'Custom Campus Route' : `Route Pattern #${team.startLevel || 1}`}
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                (Start: {team.startLocationName || `Station ${team.startLevel || 1}`})
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#38bdf8' }}>
+                              🎯 Active Target: <strong>{team.currentStationName || `Station ${team.currentStationLevel || team.currentLevel}`}</strong>
+                            </div>
+                          </div>
+
+                          {/* Visual Route Path Pills */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                            {(team.routeSequence || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).map((stnNum, idx) => {
+                              const stepNum = idx + 1;
+                              const isCompletedStep = team.isCompleted || stepNum < team.currentLevel;
+                              const isCurrentStep = !team.isCompleted && stepNum === team.currentLevel;
+
+                              return (
+                                <React.Fragment key={idx}>
+                                  <span
+                                    title={`Step ${stepNum}: Station ${stnNum}`}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      minWidth: '26px',
+                                      height: '24px',
+                                      padding: '0 6px',
+                                      borderRadius: '6px',
+                                      fontSize: '11px',
+                                      fontWeight: 800,
+                                      fontFamily: 'var(--font-mono)',
+                                      background: isCompletedStep
+                                        ? 'rgba(16, 185, 129, 0.2)'
+                                        : isCurrentStep
+                                        ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                                        : 'rgba(255, 255, 255, 0.05)',
+                                      color: isCompletedStep
+                                        ? '#34d399'
+                                        : isCurrentStep
+                                        ? '#000000'
+                                        : 'var(--text-secondary)',
+                                      border: isCompletedStep
+                                        ? '1px solid rgba(16, 185, 129, 0.4)'
+                                        : isCurrentStep
+                                        ? '1px solid #fbbf24'
+                                        : '1px solid rgba(255, 255, 255, 0.1)',
+                                      boxShadow: isCurrentStep ? '0 0 10px rgba(245, 158, 11, 0.5)' : 'none',
+                                    }}
+                                  >
+                                    {isCompletedStep ? `✓ ${stnNum}` : stnNum}
+                                  </span>
+                                  {idx < (team.routeSequence?.length || 10) - 1 && (
+                                    <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '10px' }}>➔</span>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         {/* Device Info */}
-                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Smartphone size={14} color="#38bdf8" />
                             <span>
@@ -1008,6 +1147,22 @@ export const AdminDashboard: React.FC = () => {
                             Revoke Device
                           </button>
                         )}
+
+                        {/* Edit Route */}
+                        <button
+                          onClick={() => {
+                            setRouteTargetTeam(team);
+                            setEditRouteIndex(team.startLevel && team.startLevel >= 1 && team.startLevel <= 16 ? team.startLevel : 1);
+                            setEditCustomRoute(team.customRoute || '');
+                            setIsEditRouteModalOpen(true);
+                          }}
+                          className="btn-secondary"
+                          style={{ padding: '8px 12px', fontSize: '12px', gap: '4px' }}
+                          title="Assign unique route pattern (1-16) or custom sequence"
+                        >
+                          <Compass size={14} color="#fbbf24" />
+                          <span>Route</span>
+                        </button>
 
                         {/* Change Password */}
                         <button
@@ -1569,67 +1724,193 @@ export const AdminDashboard: React.FC = () => {
           backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px'
         }}>
-          <div className="glass-panel-gold animate-fade-in" style={{ maxWidth: '440px', width: '100%', padding: '24px', background: '#0e1424' }}>
-            <h3 style={{ fontSize: '18px', color: '#fbbf24', marginBottom: '16px' }}>Register Participant Team</h3>
+          <div className="glass-panel-gold animate-fade-in" style={{ maxWidth: '520px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', background: '#0e1424' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Compass size={20} color="#fbbf24" />
+              <h3 style={{ fontSize: '18px', color: '#fbbf24', margin: 0 }}>Register Participant Team</h3>
+            </div>
             <form onSubmit={handleCreateTeam}>
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Team Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Phoenix Seekers"
+                  placeholder="e.g. Team Alpha Pioneers"
                   className="input-field"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                 />
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Team Code (Login Username)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. PHOENIX"
-                  className="input-field"
-                  value={newTeamCode}
-                  onChange={(e) => setNewTeamCode(e.target.value.toUpperCase())}
-                  style={{ textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Team Code (Login Username)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. ALPHA"
+                    className="input-field"
+                    value={newTeamCode}
+                    onChange={(e) => setNewTeamCode(e.target.value.toUpperCase())}
+                    style={{ textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    className="input-field"
+                    value={newTeamPassword}
+                    onChange={(e) => setNewTeamPassword(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="input-field"
-                  value={newTeamPassword}
-                  onChange={(e) => setNewTeamPassword(e.target.value)}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                  Designated Starting Station
+                  Assigned Route Pattern (1 to 16 Unique Permutations)
                 </label>
                 <select
                   className="input-field"
                   value={newTeamStartLevel}
                   onChange={(e) => setNewTeamStartLevel(parseInt(e.target.value, 10))}
+                  style={{ fontSize: '13px' }}
                 >
-                  <option value={0}>Auto-Balance (Distribute evenly among stations)</option>
-                  {questions.map((q) => (
-                    <option key={q.id} value={q.level}>
-                      Station {q.level}: {q.locationName || q.title}
+                  <option value={0}>🎲 Auto-Balance (Assign Next Unique Route 1-16)</option>
+                  {Object.entries(PREDEFINED_ROUTE_PATTERNS).map(([idx, p]) => (
+                    <option key={idx} value={idx}>
+                      Route {idx} (Starts Stn {p.start}: {p.sequence.join(' ➔ ')})
+                    </option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                  Each of the 16 routes follows a unique, non-linear sequence across campus so no two teams cross paths in the same order.
+                </p>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Custom Route Override (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1, 6, 3, 8, 5, 10, 2, 7, 4, 9"
+                  className="input-field"
+                  value={newTeamCustomRoute}
+                  onChange={(e) => setNewTeamCustomRoute(e.target.value)}
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                />
+                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                  Comma-separated station IDs 1 to 10. If empty, the selected Route Pattern above will be used.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn-gold" style={{ flex: 1, padding: '10px' }}>Register Team</button>
+                <button type="button" onClick={() => setIsNewTeamModalOpen(false)} className="btn-secondary" style={{ padding: '10px 16px' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 1.5 EDIT TEAM ROUTE MODAL */}
+      {isEditRouteModalOpen && routeTargetTeam && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px'
+        }}>
+          <div className="glass-panel-gold animate-fade-in" style={{ maxWidth: '520px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', background: '#0e1424' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Compass size={20} color="#fbbf24" />
+              <h3 style={{ fontSize: '18px', color: '#fbbf24', margin: 0 }}>
+                Configure Route: {routeTargetTeam.teamName}
+              </h3>
+            </div>
+            
+            <form onSubmit={handleUpdateTeamRoute}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Assign Route Pattern (1 to 16)
+                </label>
+                <select
+                  className="input-field"
+                  value={editRouteIndex}
+                  onChange={(e) => setEditRouteIndex(parseInt(e.target.value, 10))}
+                  style={{ fontSize: '13px' }}
+                >
+                  {Object.entries(PREDEFINED_ROUTE_PATTERNS).map(([idx, p]) => (
+                    <option key={idx} value={idx}>
+                      Route {idx} (Starts Stn {p.start}: {p.sequence.join(' ➔ ')})
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Live Preview of the Selected Route */}
+              {PREDEFINED_ROUTE_PATTERNS[editRouteIndex] && (
+                <div style={{
+                  padding: '12px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 700, marginBottom: '6px' }}>
+                    Route #{editRouteIndex} Traversal Path:
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    {PREDEFINED_ROUTE_PATTERNS[editRouteIndex].sequence.map((stn, i) => (
+                      <React.Fragment key={i}>
+                        <span style={{
+                          padding: '2px 7px',
+                          background: i === 0 ? '#f59e0b' : 'rgba(255, 255, 255, 0.08)',
+                          color: i === 0 ? '#000000' : '#f8fafc',
+                          fontWeight: 700,
+                          fontSize: '11px',
+                          borderRadius: '4px',
+                        }}>
+                          {i === 0 ? `Start: ${stn}` : stn}
+                        </span>
+                        {i < 9 && <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '10px' }}>➔</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Custom Route Override (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1, 6, 3, 8, 5, 10, 2, 7, 4, 9"
+                  className="input-field"
+                  value={editCustomRoute}
+                  onChange={(e) => setEditCustomRoute(e.target.value)}
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                />
+                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                  Enter exactly 10 comma-separated station IDs (1 to 10) without duplicates to override the route pattern.
+                </p>
+              </div>
+
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="btn-gold" style={{ flex: 1, padding: '10px' }}>Create Team</button>
-                <button type="button" onClick={() => setIsNewTeamModalOpen(false)} className="btn-secondary" style={{ padding: '10px 16px' }}>Cancel</button>
+                <button type="submit" className="btn-gold" style={{ flex: 1, padding: '10px' }}>
+                  Save Route
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditRouteModalOpen(false)}
+                  className="btn-secondary"
+                  style={{ padding: '10px 16px' }}
+                >
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
