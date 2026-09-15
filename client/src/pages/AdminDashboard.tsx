@@ -27,6 +27,7 @@ import {
   AlertOctagon,
   Download,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 import { getMediaUrl } from '../utils/media';
 
@@ -182,6 +183,13 @@ export const AdminDashboard: React.FC = () => {
   // Decoy / Fake QR Code Preview & States
   const [fakeQrCodeDataList, setFakeQrCodeDataList] = useState<any[]>([]);
   const [isFakeQRTrollPreviewOpen, setIsFakeQRTrollPreviewOpen] = useState(false);
+  const [isNewFakeQRModalOpen, setIsNewFakeQRModalOpen] = useState(false);
+  const [newFakeLocation, setNewFakeLocation] = useState('');
+  const [newFakeTitle, setNewFakeTitle] = useState('');
+  const [newFakeSubtitle, setNewFakeSubtitle] = useState('');
+  const [newFakeCode, setNewFakeCode] = useState('');
+  const [newFakeKey, setNewFakeKey] = useState('');
+  const [isCreatingFakeQR, setIsCreatingFakeQR] = useState(false);
 
   // Direct Warning Modal
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
@@ -638,6 +646,69 @@ export const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       alert('Failed to regenerate key');
+    }
+  };
+
+  // Custom Decoy / Fake QR Handlers
+  const handleCreateFakeQR = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFakeLocation.trim() && !newFakeTitle.trim()) {
+      alert('Please enter a location name or fake question title');
+      return;
+    }
+
+    setIsCreatingFakeQR(true);
+    try {
+      const res = await fetch('/api/admin/fake-qr-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          locationName: newFakeLocation.trim(),
+          title: newFakeTitle.trim() || newFakeLocation.trim(),
+          subtitle: newFakeSubtitle.trim() || 'Custom Trap Checkpoint',
+          code: newFakeCode.trim() || undefined,
+          accessKey: newFakeKey.trim() || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        sound.playSuccess();
+        setNewFakeLocation('');
+        setNewFakeTitle('');
+        setNewFakeSubtitle('');
+        setNewFakeCode('');
+        setNewFakeKey('');
+        setIsNewFakeQRModalOpen(false);
+        fetchFakeQRCodes();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to create fake QR code');
+      }
+    } catch (err) {
+      alert('Network error while creating fake QR code');
+    } finally {
+      setIsCreatingFakeQR(false);
+    }
+  };
+
+  const handleDeleteFakeQR = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete decoy QR badge "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/fake-qr-codes/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        fetchFakeQRCodes();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to delete fake QR code');
+      }
+    } catch (err) {
+      alert('Failed to delete decoy QR code');
     }
   };
 
@@ -1696,6 +1767,22 @@ export const AdminDashboard: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <button
+                    onClick={() => setIsNewFakeQRModalOpen(true)}
+                    className="btn-gold"
+                    style={{
+                      padding: '9px 16px',
+                      fontSize: '13px',
+                      gap: '6px',
+                      background: 'linear-gradient(135deg, #d97706, #b45309)',
+                      border: '1px solid #fde68a',
+                      color: '#ffffff',
+                    }}
+                  >
+                    <Plus size={16} />
+                    <span>+ Generate Fake / Decoy QR</span>
+                  </button>
+
+                  <button
                     onClick={() => setIsFakeQRTrollPreviewOpen(true)}
                     className="btn-secondary"
                     style={{ padding: '9px 16px', fontSize: '13px', gap: '6px' }}
@@ -1856,6 +1943,25 @@ export const AdminDashboard: React.FC = () => {
                       CAMPUS TREASURE HUNT CHECKPOINT
                     </div>
 
+                    {qr.isCustom && (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        color: '#92400e',
+                        background: '#fef3c7',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        border: '1px solid #fde68a',
+                        marginBottom: '6px',
+                      }}>
+                        <Sparkles size={11} color="#d97706" />
+                        <span>CUSTOM DECOY TRAP</span>
+                      </div>
+                    )}
+
                     <h3 style={{ fontSize: '19px', fontWeight: 900, marginBottom: '2px', color: '#0f172a' }}>
                       {qr.locationName || qr.title}
                     </h3>
@@ -1894,7 +2000,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Action Bar on Card (Hidden when printing) */}
-                    <div className="no-print" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <div className="no-print" style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => downloadQRImage(qr.qrDataUrl, qr.qrIdentifier)}
                         className="btn-secondary"
@@ -1914,6 +2020,18 @@ export const AdminDashboard: React.FC = () => {
                         <Eye size={13} />
                         <span>Test Link</span>
                       </a>
+
+                      {qr.isCustom && (
+                        <button
+                          onClick={() => handleDeleteFakeQR(qr.id, qr.locationName || qr.title)}
+                          className="btn-secondary"
+                          style={{ padding: '6px 10px', fontSize: '12px', gap: '4px', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                          title="Delete Custom Decoy QR"
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1921,6 +2039,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
 
         {/* TAB 4: SUBMISSIONS STREAM */}
         {activeTab === 'SUBMISSIONS' && (
@@ -2769,6 +2888,139 @@ export const AdminDashboard: React.FC = () => {
             >
               Close Troll Preview
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. GENERATE CUSTOM DECOY / FAKE QUESTION QR MODAL */}
+      {isNewFakeQRModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '16px'
+        }}>
+          <div className="glass-panel-gold animate-fade-in" style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '24px',
+            background: '#0e1424',
+            border: '2px solid rgba(239, 68, 68, 0.6)',
+            boxShadow: '0 0 35px rgba(239, 68, 68, 0.35)',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <Ghost size={22} color="#ef4444" />
+              <h3 style={{ fontSize: '18px', color: '#fca5a5', margin: 0 }}>
+                Generate Custom Fake / Decoy QR
+              </h3>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '18px' }}>
+              Create a deceptive campus checkpoint badge. When scanned, it triggers the troll meme photo, Malayalam quote, and logs security telemetry!
+            </p>
+
+            <form onSubmit={handleCreateFakeQR}>
+              {/* Fake Location Name */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#fca5a5', marginBottom: '4px', fontWeight: 600 }}>
+                  Decoy Location Name (e.g. Station Name) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="e.g. Main Canteen Rooftop / Physics Lab Terraces"
+                  className="input-field"
+                  value={newFakeLocation}
+                  onChange={(e) => setNewFakeLocation(e.target.value)}
+                />
+              </div>
+
+              {/* Fake Question / Lore Title */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Fake Question / Cryptic Lore Title (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. The Alchemist's Lost Flask / Mystery Station #9"
+                  className="input-field"
+                  value={newFakeTitle}
+                  onChange={(e) => setNewFakeTitle(e.target.value)}
+                />
+              </div>
+
+              {/* Fake Subtitle / Hint */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Subtitle / Badge Note (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Deceptive Campus Checkpoint / High Priority Zone"
+                  className="input-field"
+                  value={newFakeSubtitle}
+                  onChange={(e) => setNewFakeSubtitle(e.target.value)}
+                />
+              </div>
+
+              {/* Custom QR Identifier */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  QR Identifier Code (Leave blank to auto-generate)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. QR-DECOY-CANTEEN-09"
+                  className="input-field"
+                  value={newFakeCode}
+                  onChange={(e) => setNewFakeCode(e.target.value.toUpperCase())}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              {/* Fake Access Key */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                  Fake Access Key Badge (Leave blank for random 6-char key)
+                </label>
+                <input
+                  type="text"
+                  maxLength={8}
+                  placeholder="e.g. TRAP88"
+                  className="input-field"
+                  value={newFakeKey}
+                  onChange={(e) => setNewFakeKey(e.target.value.toUpperCase())}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  disabled={isCreatingFakeQR}
+                  className="btn-gold"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                    border: '1px solid #fca5a5',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                  }}
+                >
+                  {isCreatingFakeQR ? 'Generating...' : 'Generate Decoy QR Badge'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsNewFakeQRModalOpen(false)}
+                  className="btn-secondary"
+                  style={{ padding: '11px 18px' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

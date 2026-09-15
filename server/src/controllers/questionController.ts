@@ -257,7 +257,18 @@ export async function getQuestionQRCode(req: Request, res: Response): Promise<vo
   }
 }
 
-export const DECOY_CHECKPOINTS = [
+export interface DecoyCheckpoint {
+  id: string;
+  code: string;
+  title: string;
+  locationName: string;
+  accessKey: string;
+  tag: string;
+  subtitle?: string;
+  isCustom?: boolean;
+}
+
+export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
   {
     id: 'decoy-1',
     code: 'QR-DECOY-VAULT-01',
@@ -360,6 +371,7 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
           qrIdentifier: decoy.code,
           tag: decoy.tag,
           subtitle: decoy.subtitle,
+          isCustom: !!decoy.isCustom,
           huntUrl: clientUrl,
           qrDataUrl,
           trollImage: '/fake-qr-troll.jpg',
@@ -380,3 +392,90 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
     res.status(500).json({ error: 'Failed to generate decoy QR codes' });
   }
 }
+
+export async function createFakeQRCode(req: Request, res: Response): Promise<void> {
+  try {
+    const { title, locationName, subtitle, code, accessKey } = req.body;
+    if (!title && !locationName) {
+      res.status(400).json({ error: 'Title or Location Name is required for Decoy QR' });
+      return;
+    }
+
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol === 'https' ? 'https' : 'http';
+
+    const customId = `decoy-custom-${Date.now()}`;
+    let cleanCode = code ? String(code).trim().toUpperCase() : '';
+    if (!cleanCode) {
+      const slug = (locationName || title || 'TRAP')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 8)
+        .toUpperCase();
+      cleanCode = `QR-DECOY-${slug}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    } else if (!cleanCode.startsWith('QR-DECOY-') && !cleanCode.startsWith('QR-FAKE-') && !cleanCode.startsWith('QR-TRAP-')) {
+      cleanCode = `QR-DECOY-${cleanCode.replace(/^QR-/, '')}`;
+    }
+
+    const cleanKey = accessKey
+      ? String(accessKey).trim().toUpperCase().substring(0, 8)
+      : Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    const newDecoy: DecoyCheckpoint = {
+      id: customId,
+      code: cleanCode,
+      title: title || locationName || 'Campus Decoy Trap',
+      locationName: locationName || title || 'Mystery Station',
+      accessKey: cleanKey,
+      tag: 'CAMPUS DECOY CHECKPOINT',
+      subtitle: subtitle || 'Custom Trap Checkpoint',
+      isCustom: true,
+    };
+
+    DECOY_CHECKPOINTS.push(newDecoy);
+
+    const clientUrl = `${protocol}://${host}/fake-qr?code=${newDecoy.code}`;
+    const qrDataUrl = await QRCode.toDataURL(clientUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 400,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
+
+    res.status(201).json({
+      decoy: {
+        ...newDecoy,
+        level: `DECOY #${DECOY_CHECKPOINTS.length}`,
+        decoyNumber: DECOY_CHECKPOINTS.length,
+        huntUrl: clientUrl,
+        qrDataUrl,
+        trollImage: '/fake-qr-troll.jpg',
+        trollQuote:
+          'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+      },
+      message: 'Custom fake QR created successfully',
+    });
+  } catch (error) {
+    console.error('createFakeQRCode error:', error);
+    res.status(500).json({ error: 'Failed to create fake QR code' });
+  }
+}
+
+export async function deleteFakeQRCode(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const initialLength = DECOY_CHECKPOINTS.length;
+    DECOY_CHECKPOINTS = DECOY_CHECKPOINTS.filter((d) => d.id !== id);
+    if (DECOY_CHECKPOINTS.length === initialLength) {
+      res.status(404).json({ error: 'Decoy QR code not found' });
+      return;
+    }
+    res.json({ message: 'Decoy QR code deleted successfully' });
+  } catch (error) {
+    console.error('deleteFakeQRCode error:', error);
+    res.status(500).json({ error: 'Failed to delete fake QR code' });
+  }
+}
+
