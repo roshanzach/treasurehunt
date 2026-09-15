@@ -1,10 +1,27 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sound } from '../utils/audio';
 import { AlertOctagon, ArrowLeft, Ghost } from 'lucide-react';
 
+export const MALAYALAM_TROLL_QUOTE =
+  'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?';
+
+export const CGPA_TROLL_QUOTE =
+  'If you analyzed your lecture slides with this much dedication, your CGPA wouldn’t look like a room temperature.\n\nHahahahahahahaha…………';
+
 export const FakeQRPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const codeParam = (searchParams.get('code') || '').toUpperCase();
+  const quoteParam = searchParams.get('quote') || '';
+
+  let activeQuote = MALAYALAM_TROLL_QUOTE;
+  if (quoteParam) {
+    activeQuote = quoteParam;
+  } else if (codeParam.includes('CGPA')) {
+    activeQuote = CGPA_TROLL_QUOTE;
+  }
 
   useEffect(() => {
     sound.playError();
@@ -79,17 +96,18 @@ export const FakeQRPage: React.FC = () => {
           />
         </div>
 
-        {/* Malayalam Troll Text */}
+        {/* Troll Roast Text */}
         <div style={{
-          fontSize: '20px',
+          fontSize: '19px',
           lineHeight: '1.5',
           fontWeight: 800,
           color: '#fbbf24',
           marginBottom: '16px',
           textShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
           padding: '0 8px',
+          whiteSpace: 'pre-line',
         }}>
-          "ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?"
+          "{activeQuote}"
         </div>
 
         {/* Witty Subtitle */}

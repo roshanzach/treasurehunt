@@ -132,6 +132,12 @@ interface AdminLeaderboardItem {
   solvedQuestions: Array<{ level: number; title: string; solvedAt: string }>;
 }
 
+export const MALAYALAM_TROLL_QUOTE =
+  'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?';
+
+export const CGPA_TROLL_QUOTE =
+  'If you analyzed your lecture slides with this much dedication, your CGPA wouldn’t look like a room temperature.\n\nHahahahahahahaha…………';
+
 export const AdminDashboard: React.FC = () => {
   const { token } = useAuth();
   const { socket } = useSocket();
@@ -186,9 +192,11 @@ export const AdminDashboard: React.FC = () => {
   const [isNewFakeQRModalOpen, setIsNewFakeQRModalOpen] = useState(false);
   const [newFakeLocation, setNewFakeLocation] = useState('');
   const [newFakeTitle, setNewFakeTitle] = useState('');
+
   const [newFakeSubtitle, setNewFakeSubtitle] = useState('');
   const [newFakeCode, setNewFakeCode] = useState('');
   const [newFakeKey, setNewFakeKey] = useState('');
+  const [newFakeTrollQuote, setNewFakeTrollQuote] = useState('');
   const [isCreatingFakeQR, setIsCreatingFakeQR] = useState(false);
 
   // Direct Warning Modal
@@ -671,6 +679,7 @@ export const AdminDashboard: React.FC = () => {
           subtitle: newFakeSubtitle.trim() || 'Custom Trap Checkpoint',
           code: newFakeCode.trim() || undefined,
           accessKey: newFakeKey.trim() || undefined,
+          trollQuote: newFakeTrollQuote.trim() || undefined,
         }),
       });
 
@@ -681,6 +690,7 @@ export const AdminDashboard: React.FC = () => {
         setNewFakeSubtitle('');
         setNewFakeCode('');
         setNewFakeKey('');
+        setNewFakeTrollQuote('');
         setIsNewFakeQRModalOpen(false);
         fetchFakeQRCodes();
       } else {
@@ -1971,6 +1981,22 @@ export const AdminDashboard: React.FC = () => {
                         📍 {qr.title}
                       </div>
                     )}
+
+                    {qr.trollQuote && (
+                      <div style={{
+                        display: 'inline-block',
+                        fontSize: '11px',
+                        color: qr.trollQuote.includes('CGPA') ? '#b45309' : '#0369a1',
+                        background: qr.trollQuote.includes('CGPA') ? '#fef3c7' : '#e0f2fe',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        border: qr.trollQuote.includes('CGPA') ? '1px solid #fde68a' : '1px solid #bae6fd',
+                        marginTop: '4px',
+                        fontWeight: 700,
+                      }}>
+                        {qr.trollQuote.includes('CGPA') ? '🔥 CGPA Room Temp Roast' : '🗣️ Malayalam Meme Quote'}
+                      </div>
+                    )}
                   </div>
 
                   {/* QR Image Box */}
@@ -2980,7 +3006,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Fake Access Key */}
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
                   Fake Access Key Badge (Leave blank for random 6-char key)
                 </label>
@@ -2992,6 +3018,46 @@ export const AdminDashboard: React.FC = () => {
                   value={newFakeKey}
                   onChange={(e) => setNewFakeKey(e.target.value.toUpperCase())}
                   style={{ fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              {/* Troll Screen Roast Message */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#fbbf24', marginBottom: '4px', fontWeight: 600 }}>
+                  Troll Screen Roast Message (Shown on Scan)
+                </label>
+                <select
+                  className="input-field"
+                  value={
+                    newFakeTrollQuote === MALAYALAM_TROLL_QUOTE
+                      ? 'MALAYALAM'
+                      : newFakeTrollQuote === CGPA_TROLL_QUOTE
+                      ? 'CGPA'
+                      : newFakeTrollQuote === ''
+                      ? 'DEFAULT'
+                      : 'CUSTOM'
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'MALAYALAM' || val === 'DEFAULT') {
+                      setNewFakeTrollQuote(MALAYALAM_TROLL_QUOTE);
+                    } else if (val === 'CGPA') {
+                      setNewFakeTrollQuote(CGPA_TROLL_QUOTE);
+                    }
+                  }}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <option value="DEFAULT">Preset 1: Malayalam Meme ("ഇരുട്ടുപിടിച്ച മൂലകളിൽ...")</option>
+                  <option value="CGPA">Preset 2: CGPA Roast ("If you analyzed your lecture slides...")</option>
+                  <option value="CUSTOM">Custom Roast Message...</option>
+                </select>
+                <textarea
+                  rows={3}
+                  className="input-field"
+                  placeholder="Type custom roast message or edit preset above..."
+                  value={newFakeTrollQuote}
+                  onChange={(e) => setNewFakeTrollQuote(e.target.value)}
+                  style={{ fontSize: '12px' }}
                 />
               </div>
 

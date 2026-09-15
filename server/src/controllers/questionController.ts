@@ -265,8 +265,15 @@ export interface DecoyCheckpoint {
   accessKey: string;
   tag: string;
   subtitle?: string;
+  trollQuote?: string;
   isCustom?: boolean;
 }
+
+export const MALAYALAM_TROLL_QUOTE =
+  'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?';
+
+export const CGPA_TROLL_QUOTE =
+  'If you analyzed your lecture slides with this much dedication, your CGPA wouldn’t look like a room temperature.\n\nHahahahahahahaha…………';
 
 export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
   {
@@ -277,6 +284,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'VAULT9',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Secret Vault Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-2',
@@ -286,6 +294,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'PASS7X',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Overpass Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-3',
@@ -295,6 +304,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'RELIC4',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Grove Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-4',
@@ -304,6 +314,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'SHAD8M',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Passage Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-5',
@@ -313,6 +324,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'LABY2Z',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Labyrinth Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-6',
@@ -322,6 +334,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'ENIG3K',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Citadel Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-7',
@@ -331,6 +344,7 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'PHAN5R',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Archive Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
   },
   {
     id: 'decoy-8',
@@ -340,6 +354,17 @@ export let DECOY_CHECKPOINTS: DecoyCheckpoint[] = [
     accessKey: 'LOST1W',
     tag: 'CAMPUS DECOY CHECKPOINT',
     subtitle: 'Caché Checkpoint',
+    trollQuote: MALAYALAM_TROLL_QUOTE,
+  },
+  {
+    id: 'decoy-cgpa-9',
+    code: 'QR-DECOY-CGPA-09',
+    title: 'Academic Honors Vault',
+    locationName: 'Lecture Hall Complex',
+    accessKey: 'CGPA99',
+    tag: 'CAMPUS DECOY CHECKPOINT',
+    subtitle: 'Lecture Hall Archive',
+    trollQuote: CGPA_TROLL_QUOTE,
   },
 ];
 
@@ -350,7 +375,8 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
 
     const fakeQRCodes = await Promise.all(
       DECOY_CHECKPOINTS.map(async (decoy, index) => {
-        const clientUrl = `${protocol}://${host}/fake-qr?code=${decoy.code}`;
+        const quoteToUse = decoy.trollQuote || MALAYALAM_TROLL_QUOTE;
+        const clientUrl = `${protocol}://${host}/fake-qr?code=${decoy.code}&quote=${encodeURIComponent(quoteToUse)}`;
         const qrDataUrl = await QRCode.toDataURL(clientUrl, {
           errorCorrectionLevel: 'H',
           margin: 2,
@@ -375,8 +401,7 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
           huntUrl: clientUrl,
           qrDataUrl,
           trollImage: '/fake-qr-troll.jpg',
-          trollQuote:
-            'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+          trollQuote: quoteToUse,
         };
       })
     );
@@ -384,8 +409,7 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
     res.json({
       fakeQRCodes,
       trollImage: '/fake-qr-troll.jpg',
-      trollQuote:
-        'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+      trollQuote: MALAYALAM_TROLL_QUOTE,
     });
   } catch (error) {
     console.error('getFakeQRCodes error:', error);
@@ -395,7 +419,7 @@ export async function getFakeQRCodes(req: Request, res: Response): Promise<void>
 
 export async function createFakeQRCode(req: Request, res: Response): Promise<void> {
   try {
-    const { title, locationName, subtitle, code, accessKey } = req.body;
+    const { title, locationName, subtitle, code, accessKey, trollQuote } = req.body;
     if (!title && !locationName) {
       res.status(400).json({ error: 'Title or Location Name is required for Decoy QR' });
       return;
@@ -420,6 +444,8 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
       ? String(accessKey).trim().toUpperCase().substring(0, 8)
       : Math.random().toString(36).substring(2, 8).toUpperCase();
 
+    const quoteToUse = trollQuote?.trim() || MALAYALAM_TROLL_QUOTE;
+
     const newDecoy: DecoyCheckpoint = {
       id: customId,
       code: cleanCode,
@@ -428,12 +454,13 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
       accessKey: cleanKey,
       tag: 'CAMPUS DECOY CHECKPOINT',
       subtitle: subtitle || 'Custom Trap Checkpoint',
+      trollQuote: quoteToUse,
       isCustom: true,
     };
 
     DECOY_CHECKPOINTS.push(newDecoy);
 
-    const clientUrl = `${protocol}://${host}/fake-qr?code=${newDecoy.code}`;
+    const clientUrl = `${protocol}://${host}/fake-qr?code=${newDecoy.code}&quote=${encodeURIComponent(quoteToUse)}`;
     const qrDataUrl = await QRCode.toDataURL(clientUrl, {
       errorCorrectionLevel: 'H',
       margin: 2,
@@ -452,8 +479,7 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
         huntUrl: clientUrl,
         qrDataUrl,
         trollImage: '/fake-qr-troll.jpg',
-        trollQuote:
-          'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+        trollQuote: quoteToUse,
       },
       message: 'Custom fake QR created successfully',
     });
@@ -462,6 +488,7 @@ export async function createFakeQRCode(req: Request, res: Response): Promise<voi
     res.status(500).json({ error: 'Failed to create fake QR code' });
   }
 }
+
 
 export async function deleteFakeQRCode(req: Request, res: Response): Promise<void> {
   try {

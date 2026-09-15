@@ -7,6 +7,7 @@ import {
   isStationAlreadySolved,
   getTeamRoute,
 } from '../utils/routePlanner';
+import { DECOY_CHECKPOINTS, MALAYALAM_TROLL_QUOTE, CGPA_TROLL_QUOTE } from './questionController';
 
 export async function getHuntStatus(req: Request, res: Response): Promise<void> {
   try {
@@ -106,7 +107,8 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
     if (
       normalizedQR.includes('DECOY') ||
       normalizedQR.includes('FAKE') ||
-      normalizedQR.includes('TRAP')
+      normalizedQR.includes('TRAP') ||
+      normalizedQR.includes('CGPA')
     ) {
       // Log troll telemetry
       try {
@@ -122,12 +124,15 @@ export async function accessQuestion(req: Request, res: Response): Promise<void>
         console.warn('Failed to log fake QR scan:', logErr);
       }
 
+      const matchingDecoy = DECOY_CHECKPOINTS.find((d) => d.code.toUpperCase() === normalizedQR);
+      const quote = matchingDecoy?.trollQuote ||
+        (normalizedQR.includes('CGPA') ? CGPA_TROLL_QUOTE : MALAYALAM_TROLL_QUOTE);
+
       res.json({
         status: 'FAKE_QR',
         isFake: true,
         trollImage: '/fake-qr-troll.jpg',
-        trollQuote:
-          'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?',
+        trollQuote: quote,
       });
       return;
     }

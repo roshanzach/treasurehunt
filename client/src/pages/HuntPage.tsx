@@ -84,6 +84,9 @@ export const HuntPage: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState(false);
   const [totalQuestions, setTotalQuestions] = useState(10);
   const [isFakeQRTrollOpen, setIsFakeQRTrollOpen] = useState(false);
+  const [fakeQRTrollQuote, setFakeQRTrollQuote] = useState<string>(
+    'ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?'
+  );
 
   // Anti-Cheat Engine Hook
   const { warningModalOpen, lastViolationReason, violationCount, dismissWarning } = useAntiCheat(true);
@@ -141,6 +144,9 @@ export const HuntPage: React.FC = () => {
 
       if (data.status === 'FAKE_QR' || data.isFake) {
         sound.playError();
+        if (data.trollQuote) {
+          setFakeQRTrollQuote(data.trollQuote);
+        }
         setIsFakeQRTrollOpen(true);
         return;
       }
@@ -1082,8 +1088,9 @@ export const HuntPage: React.FC = () => {
               marginBottom: '14px',
               textShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
               padding: '0 4px',
+              whiteSpace: 'pre-line',
             }}>
-              "ഇരുട്ടുപിടിച്ച മൂലകളിൽ കയറി കണ്ട കറുപ്പും വെളുപ്പും വരകളൊക്കെ സ്കാൻ ചെയ്യാനാണോ നിന്നെ വീട്ടുകാർ കോളേജിലോട്ട് വിട്ടത്?"
+              "{fakeQRTrollQuote}"
             </div>
 
             <p style={{
